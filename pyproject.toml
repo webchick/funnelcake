@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "funnelcake"
+version = "0.1.0"
+description = "Pipeline scaffolding for platform profiling, signal mining, intent extraction, benchmark building, and discovery evaluation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "webchick" }]
+dependencies = []
+
+[project.scripts]
+funnelcake = "funnelcake_cli.main:main"
+
+[tool.setuptools.packages.find]
+where = [
+  "apps/cli/src",
+  "packages/platform-profile/src",
+  "packages/signal-mining/src",
+  "packages/intent-extraction/src",
+  "packages/benchmark-builder/src",
+  "packages/discover-eval/src",
+  "packages/reporting/src",
+  "shared",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "apps/cli/src",
+  "packages/platform-profile/src",
+  "packages/signal-mining/src",
+  "packages/intent-extraction/src",
+  "packages/benchmark-builder/src",
+  "packages/discover-eval/src",
+  "packages/reporting/src",
+  "shared",
+]
