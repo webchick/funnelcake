@@ -2,6 +2,19 @@
 
 Funnelcake is a scaffold for an agent discovery/evaluation pipeline. The initial structure follows `plan.md` and splits the work into importable packages for platform profiling, signal mining, intent extraction, benchmark building, discovery evaluation, and reporting.
 
+Uses DESSERT metrics:
+
+| DESSERT          | Human PLG                                                 | Agentic PLG                                                       |
+| ---------------- | --------------------------------------------------------- | ----------------------------------------------------------------- |
+| **D · Discover** | Human becomes aware you exist                             | Agent surfaces you for an eligible intent                         |
+| **E · Evaluate** | Human reads docs/site/reviews and decides whether you fit | Agent understands capabilities, constraints and suitability       |
+| **S · Select**   | Human chooses/signs up for your product                   | Agent recommends or chooses you among candidates                  |
+| **S · Setup**    | Signup, onboarding, configuration, integrations           | Auth, credentials, permissions, MCP/API connection                |
+| **E · Execute**  | Human reaches first value                                 | Agent successfully completes the intended task                    |
+| **R · Repeat**   | Human returns and develops a habit                        | Agent repeatedly routes eligible work through you                 |
+| **T · Trust**    | Human becomes comfortable depending on the product        | Human allows increasingly autonomous delegation through the agent |
+
+
 ## Layout
 
 - `apps/cli`: command-line entry point.
