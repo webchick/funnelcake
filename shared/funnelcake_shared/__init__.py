@@ -1,2 +1,35 @@
-"""Shared helpers and schemas for Funnelcake packages."""
+"""Shared helpers, schemas, and trace primitives for Funnelcake packages."""
 
+from .traces import (
+    Attributes,
+    DessertStage,
+    Diagnosis,
+    EvidenceGrade,
+    EvidenceRef,
+    Failure,
+    JsonValue,
+    Span,
+    SpanKind,
+    StageMetric,
+    TraceEvent,
+    TraceEventType,
+    Trial,
+    TrialStatus,
+)
+
+__all__ = [
+    "Attributes",
+    "DessertStage",
+    "Diagnosis",
+    "EvidenceGrade",
+    "EvidenceRef",
+    "Failure",
+    "JsonValue",
+    "Span",
+    "SpanKind",
+    "StageMetric",
+    "TraceEvent",
+    "TraceEventType",
+    "Trial",
+    "TrialStatus",
+]

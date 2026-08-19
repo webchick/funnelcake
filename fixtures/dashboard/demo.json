@@ -1,0 +1,142 @@
+{
+  "eligible_count": 10000,
+  "metrics": [
+    {"stage": "discover", "name": "score", "score": 72, "numerator": 7200, "denominator": 10000},
+    {"stage": "evaluate", "name": "score", "score": 86, "numerator": 6192, "denominator": 7200},
+    {"stage": "select", "name": "score", "score": 61, "numerator": 3777, "denominator": 6192},
+    {"stage": "setup", "name": "score", "score": 43, "numerator": 1624, "denominator": 3777},
+    {"stage": "execute", "name": "score", "score": 78, "numerator": 1267, "denominator": 1624},
+    {"stage": "repeat", "name": "score", "score": 67, "numerator": 849, "denominator": 1267},
+    {"stage": "trust", "name": "score", "score": 58, "numerator": 492, "denominator": 849}
+  ],
+  "trials": [
+    {
+      "id": "FC-1842",
+      "stage": "setup",
+      "task": "Create a project and deploy the example application.",
+      "agent": "example-agent",
+      "status": "failed",
+      "trace_id": "trace-1842",
+      "outcome_verified": true,
+      "task_family": "deploy-app",
+      "attributes": {
+        "funnelcake.stage": "setup",
+        "funnelcake.task.family": "deploy-app"
+      }
+    },
+    {
+      "id": "FC-1901",
+      "stage": "setup",
+      "task": "Create a project from the API quickstart.",
+      "agent": "example-agent",
+      "status": "failed",
+      "trace_id": "trace-1901",
+      "outcome_verified": true,
+      "task_family": "create-project",
+      "attributes": {
+        "funnelcake.stage": "setup",
+        "funnelcake.task.family": "create-project"
+      }
+    }
+  ],
+  "spans": [
+    {
+      "id": "span-1842-root",
+      "trace_id": "trace-1842",
+      "name": "trial FC-1842",
+      "start_time": "2026-08-19T14:03:02Z",
+      "end_time": "2026-08-19T14:03:45Z",
+      "kind": "internal",
+      "status_code": "ERROR",
+      "status_message": "Failed before authenticated API access.",
+      "attributes": {
+        "funnelcake.trial.id": "FC-1842",
+        "funnelcake.stage": "setup",
+        "openinference.span.kind": "AGENT"
+      },
+      "events": [
+        {
+          "id": "event-1842-1",
+          "timestamp": "2026-08-19T14:03:02Z",
+          "name": "search documentation for authentication",
+          "type": "search",
+          "attributes": {
+            "funnelcake.actor": "agent",
+            "search.query": "create API token"
+          }
+        },
+        {
+          "id": "event-1842-2",
+          "timestamp": "2026-08-19T14:03:07Z",
+          "name": "open API documentation",
+          "type": "navigation",
+          "attributes": {
+            "url.full": "https://example.com/docs/api",
+            "funnelcake.actor": "agent"
+          }
+        },
+        {
+          "id": "event-1842-3",
+          "timestamp": "2026-08-19T14:03:42Z",
+          "name": "request human intervention",
+          "type": "human_intervention",
+          "attributes": {
+            "funnelcake.failure.type": "auth_docs_not_found"
+          },
+          "body": "Cannot proceed autonomously."
+        }
+      ]
+    }
+  ],
+  "failures": [
+    {
+      "trial_id": "FC-1842",
+      "failure_type": "auth_docs_not_found",
+      "stage": "setup",
+      "summary": "Authentication instructions were not located before the agent requested human intervention.",
+      "evidence": [
+        {
+          "trace_id": "trace-1842",
+          "span_id": "span-1842-root",
+          "event_id": "event-1842-3",
+          "source_url": "https://example.com/docs/api"
+        }
+      ]
+    },
+    {
+      "trial_id": "FC-1901",
+      "failure_type": "auth_docs_not_found",
+      "stage": "setup",
+      "summary": "Authentication instructions were not located from API onboarding.",
+      "evidence": [
+        {
+          "trace_id": "trace-1901",
+          "source_url": "https://example.com/docs/api"
+        }
+      ]
+    }
+  ],
+  "diagnoses": [
+    {
+      "id": "AUTH-017",
+      "title": "Authentication docs are difficult for agents to locate",
+      "stage": "setup",
+      "evidence_grade": "strongly_supported",
+      "affected_trial_ids": ["FC-1842", "FC-1901"],
+      "observed_pattern": "Agents determine that authentication is required but fail to locate instructions explaining how credentials are created.",
+      "supporting_sources": [
+        "https://example.com/docs/api",
+        "https://example.com/docs/authentication",
+        "https://example.com/docs/access-tokens"
+      ],
+      "suggested_intervention": "Link credential creation directly from API onboarding and use consistent terminology for authentication/access tokens.",
+      "evidence": [
+        {
+          "trace_id": "trace-1842",
+          "span_id": "span-1842-root",
+          "event_id": "event-1842-3"
+        }
+      ]
+    }
+  ]
+}
