@@ -1,0 +1,116 @@
+{
+  "id": "drupal-raw-collected-sample",
+  "subjectEntity": "Drupal",
+  "subjectProductId": "drupal",
+  "description": "Loose/raw-ish collected answer observations before Funnelcake normalization.",
+  "prompts": [
+    {
+      "id": "cms-enterprise-raw-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnelStage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS"
+      ]
+    }
+  ],
+  "observations": [
+    {
+      "id": "raw-obs-001",
+      "runId": "raw-run-001",
+      "promptId": "cms-enterprise-raw-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "engine": "chat",
+      "surface": "web",
+      "provider": "example",
+      "model": "example-model",
+      "modelVersion": "2026-08",
+      "searchEnabled": true,
+      "country": "US",
+      "language": "en",
+      "timestamp": "2026-08-20T04:10:00Z",
+      "runNumber": 1,
+      "answer": "Drupal should be strongly considered for a university multisite program because it supports governance, permissions, and structured content. WordPress may work for simpler department sites.",
+      "rawRequest": {
+        "prompt_id": "cms-enterprise-raw-001",
+        "search": true
+      },
+      "rawResponse": {
+        "provider_payload_fixture": true
+      },
+      "mentions": [
+        {
+          "entity": "Drupal",
+          "productId": "drupal",
+          "role": "recommended",
+          "recommendationPosition": 1,
+          "stance": "positive"
+        },
+        {
+          "entity": "WordPress",
+          "productId": "wordpress",
+          "role": "alternative",
+          "recommendationPosition": 2,
+          "stance": "neutral"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/case-study/higher-education",
+          "title": "Drupal higher education case studies",
+          "entity": "Drupal",
+          "productId": "drupal"
+        }
+      ],
+      "retrievedSources": [
+        {
+          "url": "https://www.drupal.org/",
+          "title": "Drupal",
+          "rank": 1,
+          "entity": "Drupal",
+          "productId": "drupal"
+        },
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "rank": 2,
+          "entity": "WordPress",
+          "productId": "wordpress"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal supports governance, permissions, and structured content.",
+          "support": "cited",
+          "sourceUrls": [
+            "https://www.drupal.org/case-study/higher-education"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -105,6 +105,13 @@ shape consumed by summary, inspection, and comparison commands. Raw provider
 request/response payloads should remain in `raw_request` and `raw_response` so
 later analysis can be rerun without repeating the original probes.
 
+The loader accepts common collected-output aliases such as `subjectEntity`,
+`subjectProductId`, `promptId`, `runId`, `modelVersion`, `searchEnabled`,
+`runNumber`, `answer`, `rawRequest`, `rawResponse`, `productId`,
+`recommendationPosition`, `retrievedSources`, and `sourceUrls`. See
+`fixtures/geo/drupal-raw-collected.json` for a minimal raw-to-normalized
+example.
+
 ## Inspection
 
 Use `inspect-observation` to drill from an aggregate metric back to one raw
