@@ -19,6 +19,7 @@ from funnelcake_answer_observation import (
     import_observation_set_sqlite,
     load_observation_set,
     run_fixture_provider,
+    run_gemini_provider,
     run_openai_provider,
     run_perplexity_provider,
     summarize_observations,
@@ -240,6 +241,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path for the raw observation-set JSON output.",
     )
 
+    run_gemini = subparsers.add_parser(
+        "run-observation-gemini",
+        help="Run Gemini API prompts and write raw AEO/GEO observations.",
+    )
+    run_gemini.add_argument("path", help="Path to a Gemini provider JSON config.")
+    run_gemini.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
     run_perplexity = subparsers.add_parser(
         "run-observation-perplexity",
         help="Run Perplexity Sonar prompts and write raw AEO/GEO observations.",
@@ -369,6 +381,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     geo_run_openai.add_argument("path", help="Path to an OpenAI provider JSON config.")
     geo_run_openai.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
+    geo_run_gemini = geo_subparsers.add_parser(
+        "run-gemini",
+        help="Run Gemini API prompts and write raw AEO/GEO observations.",
+    )
+    geo_run_gemini.add_argument("path", help="Path to a Gemini provider JSON config.")
+    geo_run_gemini.add_argument(
         "--out",
         required=True,
         help="Path for the raw observation-set JSON output.",
@@ -734,6 +757,19 @@ def run_observation_openai(path: str, output_path: str) -> str:
     )
 
 
+def run_observation_gemini(path: str, output_path: str) -> str:
+    observation_set = run_gemini_provider(path)
+    written_path = write_observation_set(observation_set, output_path)
+    return "\n".join(
+        [
+            f"run_observation_set={observation_set.id}",
+            f"provider={observation_set.attributes.get('provider', '')}",
+            f"observations={len(observation_set.observations)}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def run_observation_perplexity(path: str, output_path: str) -> str:
     observation_set = run_perplexity_provider(path)
     written_path = write_observation_set(observation_set, output_path)
@@ -790,6 +826,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return run_observation_fixture(args.path, args.out)
     if args.geo_command == "run-openai":
         return run_observation_openai(args.path, args.out)
+    if args.geo_command == "run-gemini":
+        return run_observation_gemini(args.path, args.out)
     if args.geo_command == "run-perplexity":
         return run_observation_perplexity(args.path, args.out)
     if args.geo_command == "compare":
@@ -911,6 +949,8 @@ def main() -> None:
             print(run_observation_fixture(args.path, args.out))
         elif args.command == "run-observation-openai":
             print(run_observation_openai(args.path, args.out))
+        elif args.command == "run-observation-gemini":
+            print(run_observation_gemini(args.path, args.out))
         elif args.command == "run-observation-perplexity":
             print(run_observation_perplexity(args.path, args.out))
         elif args.command == "compare-observations":

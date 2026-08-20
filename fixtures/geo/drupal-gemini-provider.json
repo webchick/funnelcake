@@ -1,0 +1,47 @@
+{
+  "id": "drupal-gemini-provider-run",
+  "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
+  "description": "Gemini provider config for running real answer observations.",
+  "provider": "google",
+  "surface": "api",
+  "model": "gemini-3.5-flash",
+  "search_enabled": true,
+  "country": "US",
+  "run_number": 1,
+  "repetition": 1,
+  "prompts": [
+    {
+      "id": "cms-enterprise-gemini-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS"
+      ]
+    }
+  ]
+}

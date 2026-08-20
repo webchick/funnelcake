@@ -203,6 +203,19 @@ class GeoCliTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("OPENAI_API_KEY is required", result.stderr)
 
+    def test_geo_run_gemini_requires_api_key(self) -> None:
+        result = self.run_cli(
+            "geo",
+            "run-gemini",
+            "fixtures/geo/drupal-gemini-provider.json",
+            "--out",
+            "/tmp/unused-gemini-observations.json",
+            extra_env={"GEMINI_API_KEY": None},
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("GEMINI_API_KEY is required", result.stderr)
+
     def test_geo_run_perplexity_requires_api_key(self) -> None:
         result = self.run_cli(
             "geo",

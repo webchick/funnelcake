@@ -248,6 +248,20 @@ provider response, captures `output_text` or message text as `raw_answer`, and
 extracts URL annotations as citations when present. If `search_enabled` is true
 in the provider config, the request includes the hosted web search tool.
 
+## Gemini Provider Runs
+
+Use the Gemini provider to collect grounded Generate Content observations:
+
+```bash
+GEMINI_API_KEY=... funnelcake geo run-gemini gemini-provider.json --out raw-observations.json
+```
+
+The v0 Gemini adapter sends each prompt to `models.generateContent`, stores the
+raw provider response, captures `candidates[0].content.parts[*].text` as
+`raw_answer`, and maps `groundingMetadata.groundingChunks[*].web` into
+Funnelcake citations and retrieved sources. When `search_enabled` is true in the
+provider config, the request includes the `google_search` grounding tool.
+
 ## Perplexity Provider Runs
 
 Use the Perplexity provider to collect Sonar observations:

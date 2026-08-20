@@ -12,6 +12,7 @@ from funnelcake_answer_observation import (
     load_observation_set,
     import_observation_set_sqlite,
     run_fixture_provider,
+    run_gemini_provider,
     run_openai_provider,
     run_perplexity_provider,
     validate_observation_file,
@@ -240,6 +241,77 @@ class ObservationLoaderTest(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "OPENAI_API_KEY"):
                 run_openai_provider(REPO_ROOT / "fixtures/geo/drupal-openai-provider.json")
+
+    def test_runs_gemini_provider_with_mocked_response(self) -> None:
+        response_body = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": "Drupal is a strong fit for large university multisite needs.",
+                            }
+                        ]
+                    },
+                    "groundingMetadata": {
+                        "webSearchQueries": [
+                            "Drupal university multisite CMS",
+                        ],
+                        "groundingChunks": [
+                            {
+                                "web": {
+                                    "uri": "https://www.drupal.org/",
+                                    "title": "Drupal",
+                                }
+                            }
+                        ],
+                    },
+                }
+            ],
+        }
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return json.dumps(response_body).encode("utf-8")
+
+        with patch(
+            "funnelcake_answer_observation.runner.request.urlopen",
+            return_value=FakeResponse(),
+        ) as urlopen:
+            observation_set = run_gemini_provider(
+                REPO_ROOT / "fixtures/geo/drupal-gemini-provider.json",
+                api_key="test-key",
+            )
+
+        request = urlopen.call_args.args[0]
+        payload = json.loads(request.data.decode("utf-8"))
+        observation = observation_set.observations[0]
+
+        self.assertEqual(
+            request.full_url,
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent",
+        )
+        self.assertEqual(request.headers["X-goog-api-key"], "test-key")
+        self.assertEqual(payload["contents"][0]["role"], "user")
+        self.assertEqual(payload["contents"][0]["parts"][0]["text"], observation.prompt)
+        self.assertEqual(payload["tools"], [{"google_search": {}}])
+        self.assertEqual(observation.provider, "google")
+        self.assertEqual(observation.engine, "generateContent")
+        self.assertEqual(observation.raw_answer, response_body["candidates"][0]["content"]["parts"][0]["text"])
+        self.assertEqual(observation.citations[0].url, "https://www.drupal.org/")
+        self.assertEqual(observation.retrieved_sources[0].url, "https://www.drupal.org/")
+        self.assertEqual(observation.attributes["web_search_queries"], ("Drupal university multisite CMS",))
+
+    def test_gemini_provider_requires_api_key(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "GEMINI_API_KEY"):
+                run_gemini_provider(REPO_ROOT / "fixtures/geo/drupal-gemini-provider.json")
 
     def test_runs_perplexity_provider_with_mocked_response(self) -> None:
         response_body = {

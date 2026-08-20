@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 from urllib import request
 
 from .models import AnswerObservation, Citation, ObservationSet, ProbePrompt, Product, RetrievedSource
@@ -150,6 +151,83 @@ def run_openai_provider(path: str | Path, api_key: str | None = None) -> Observa
     )
 
 
+def run_gemini_provider(path: str | Path, api_key: str | None = None) -> ObservationSet:
+    with Path(path).open(encoding="utf-8") as config_file:
+        raw = json.load(config_file)
+
+    key = api_key or os.environ.get("GEMINI_API_KEY")
+    if not key:
+        raise RuntimeError("GEMINI_API_KEY is required for the Gemini provider")
+
+    prompts = tuple(_prompt(item) for item in raw.get("prompts", []))
+    products = tuple(_product(item) for item in raw.get("products", []))
+    provider = raw.get("provider", "google")
+    model = raw["model"]
+    run_id = raw["id"]
+    search_enabled = raw.get("search_enabled", True)
+    observations = []
+    for index, prompt in enumerate(prompts, start=1):
+        observed_at = _current_timestamp()
+        response = _gemini_response(
+            api_key=key,
+            model=model,
+            prompt=prompt.prompt,
+            search_enabled=search_enabled,
+        )
+        observations.append(
+            AnswerObservation(
+                id=f"{run_id}-obs-{index:03d}",
+                run_id=run_id,
+                prompt_id=prompt.id,
+                prompt=prompt.prompt,
+                raw_answer=_gemini_text(response),
+                engine="generateContent",
+                surface=raw.get("surface", "api"),
+                provider=provider,
+                model=model,
+                model_version=raw.get("model_version"),
+                search_enabled=search_enabled,
+                country=raw.get("country"),
+                region=prompt.region,
+                language=prompt.language,
+                timestamp=observed_at,
+                run_number=raw.get("run_number", 1),
+                repetition=raw.get("repetition", 1),
+                raw_request={
+                    "prompt_id": prompt.id,
+                    "prompt": prompt.prompt,
+                    "provider": provider,
+                    "model": model,
+                    "search_enabled": search_enabled,
+                },
+                raw_response=response,
+                citations=_gemini_citations(response),
+                retrieved_sources=_gemini_retrieved_sources(response),
+                attributes={
+                    "web_search_queries": _gemini_web_search_queries(response),
+                },
+            )
+        )
+
+    if not observations:
+        raise ValueError("Gemini provider config requires at least one prompt")
+
+    return ObservationSet(
+        id=run_id,
+        subject_entity=_field(raw, "subject_entity", "subjectEntity"),
+        subject_product_id=_field(raw, "subject_product_id", "subjectProductId"),
+        description=raw.get("description"),
+        prompts=prompts,
+        products=products,
+        observations=tuple(observations),
+        attributes={
+            "provider_config": str(path),
+            "provider": provider,
+            **raw.get("attributes", {}),
+        },
+    )
+
+
 def run_perplexity_provider(path: str | Path, api_key: str | None = None) -> ObservationSet:
     with Path(path).open(encoding="utf-8") as config_file:
         raw = json.load(config_file)
@@ -275,6 +353,45 @@ def _perplexity_response(
         return json.loads(response.read().decode("utf-8"))
 
 
+def _gemini_response(
+    api_key: str,
+    model: str,
+    prompt: str,
+    search_enabled: bool,
+) -> dict[str, Any]:
+    model_path = model if model.startswith("models/") else f"models/{model}"
+    payload: dict[str, Any] = {
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "text": prompt,
+                    }
+                ],
+            }
+        ],
+    }
+    if search_enabled:
+        payload["tools"] = [{"google_search": {}}]
+    body = json.dumps(payload).encode("utf-8")
+    api_request = request.Request(
+        f"https://generativelanguage.googleapis.com/v1beta/{quote(model_path, safe='/-_.')}:generateContent",
+        data=body,
+        headers={
+            "x-goog-api-key": api_key,
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with request.urlopen(api_request, timeout=120) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _current_timestamp() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 def _response_text(response: dict[str, Any]) -> str:
     if isinstance(response.get("output_text"), str):
         return response["output_text"]
@@ -294,6 +411,15 @@ def _chat_completion_text(response: dict[str, Any]) -> str:
     message = choices[0].get("message", {})
     content = message.get("content")
     return content if isinstance(content, str) else ""
+
+
+def _gemini_text(response: dict[str, Any]) -> str:
+    candidates = response.get("candidates", [])
+    if not candidates:
+        return ""
+    parts = candidates[0].get("content", {}).get("parts", [])
+    texts = [part.get("text") for part in parts if isinstance(part.get("text"), str)]
+    return "\n".join(texts)
 
 
 def _response_timestamp(response: dict[str, Any]) -> str | None:
@@ -358,6 +484,57 @@ def _perplexity_retrieved_sources(response: dict[str, Any]) -> tuple[RetrievedSo
             )
         )
     return tuple(sources)
+
+
+def _gemini_grounding_metadata(response: dict[str, Any]) -> dict[str, Any]:
+    candidates = response.get("candidates", [])
+    if not candidates:
+        return {}
+    metadata = candidates[0].get("groundingMetadata", {})
+    return metadata if isinstance(metadata, dict) else {}
+
+
+def _gemini_citations(response: dict[str, Any]) -> tuple[Citation, ...]:
+    citations = []
+    seen_urls = set()
+    for chunk in _gemini_grounding_metadata(response).get("groundingChunks", []):
+        web = chunk.get("web", {})
+        url = web.get("uri")
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        citations.append(Citation(url=url, title=web.get("title")))
+    return tuple(citations)
+
+
+def _gemini_retrieved_sources(response: dict[str, Any]) -> tuple[RetrievedSource, ...]:
+    sources = []
+    for index, chunk in enumerate(_gemini_grounding_metadata(response).get("groundingChunks", []), start=1):
+        web = chunk.get("web", {})
+        url = web.get("uri")
+        if not url:
+            continue
+        sources.append(
+            RetrievedSource(
+                url=url,
+                title=web.get("title"),
+                rank=index,
+                attributes={
+                    key: value
+                    for key, value in web.items()
+                    if key not in {"uri", "title"}
+                },
+            )
+        )
+    return tuple(sources)
+
+
+def _gemini_web_search_queries(response: dict[str, Any]) -> tuple[str, ...]:
+    return tuple(
+        query
+        for query in _gemini_grounding_metadata(response).get("webSearchQueries", [])
+        if isinstance(query, str)
+    )
 
 
 def _prompt(record: dict[str, Any]) -> ProbePrompt:
