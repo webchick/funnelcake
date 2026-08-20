@@ -27,6 +27,7 @@ Uses DESSERT metrics:
 - `shared`: schemas, LLM adapters, and web helpers shared across packages.
 - `fixtures`: platform-specific sample inputs.
 - `artifacts`: local run output, ignored by git.
+- `specs`: design notes for benchmark grain size and data semantics.
 
 ## Local checks
 
