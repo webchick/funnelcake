@@ -248,6 +248,19 @@ provider response, captures `output_text` or message text as `raw_answer`, and
 extracts URL annotations as citations when present. If `search_enabled` is true
 in the provider config, the request includes the hosted web search tool.
 
+## Perplexity Provider Runs
+
+Use the Perplexity provider to collect Sonar observations:
+
+```bash
+PERPLEXITY_API_KEY=... funnelcake geo run-perplexity perplexity-provider.json --out raw-observations.json
+```
+
+The v0 Perplexity adapter sends each prompt to `/v1/sonar`, stores the raw
+provider response, captures `choices[0].message.content` as `raw_answer`, and
+maps top-level `citations` and `search_results` into Funnelcake citations and
+retrieved sources.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

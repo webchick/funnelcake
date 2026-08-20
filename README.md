@@ -54,6 +54,7 @@ PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/dr
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/drupal-raw-collected.json --json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-fixture fixtures/geo/drupal-fixture-provider.json --out artifacts/geo/drupal-fixture-run.json
 OPENAI_API_KEY=... PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-openai fixtures/geo/drupal-openai-provider.json --out artifacts/geo/drupal-openai-run.json
+PERPLEXITY_API_KEY=... PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-perplexity fixtures/geo/drupal-perplexity-provider.json --out artifacts/geo/drupal-perplexity-run.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo normalize fixtures/geo/drupal-answers.json --out artifacts/geo/drupal-answers.normalized.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo normalize fixtures/geo/drupal-raw-collected.json --out artifacts/geo/drupal-raw-collected.normalized.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo extract-products fixtures/geo/drupal-unextracted.json --out artifacts/geo/drupal-extracted.json

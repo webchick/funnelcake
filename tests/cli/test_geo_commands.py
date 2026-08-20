@@ -203,6 +203,19 @@ class GeoCliTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("OPENAI_API_KEY is required", result.stderr)
 
+    def test_geo_run_perplexity_requires_api_key(self) -> None:
+        result = self.run_cli(
+            "geo",
+            "run-perplexity",
+            "fixtures/geo/drupal-perplexity-provider.json",
+            "--out",
+            "/tmp/unused-perplexity-observations.json",
+            extra_env={"PERPLEXITY_API_KEY": None},
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("PERPLEXITY_API_KEY is required", result.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

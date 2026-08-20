@@ -1,0 +1,46 @@
+{
+  "id": "drupal-perplexity-provider-run",
+  "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
+  "description": "Perplexity provider config for running real answer observations.",
+  "provider": "perplexity",
+  "surface": "api",
+  "model": "sonar-pro",
+  "country": "US",
+  "run_number": 1,
+  "repetition": 1,
+  "prompts": [
+    {
+      "id": "cms-enterprise-perplexity-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS"
+      ]
+    }
+  ]
+}

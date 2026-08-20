@@ -13,6 +13,7 @@ from funnelcake_answer_observation import (
     import_observation_set_sqlite,
     run_fixture_provider,
     run_openai_provider,
+    run_perplexity_provider,
     validate_observation_file,
     write_observation_set,
 )
@@ -239,6 +240,69 @@ class ObservationLoaderTest(unittest.TestCase):
         with patch.dict("os.environ", {}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "OPENAI_API_KEY"):
                 run_openai_provider(REPO_ROOT / "fixtures/geo/drupal-openai-provider.json")
+
+    def test_runs_perplexity_provider_with_mocked_response(self) -> None:
+        response_body = {
+            "id": "sonar-response-001",
+            "model": "sonar-pro",
+            "created": 1787201460,
+            "choices": [
+                {
+                    "message": {
+                        "role": "assistant",
+                        "content": "Drupal is a strong fit for large university multisite needs.",
+                    }
+                }
+            ],
+            "citations": [
+                "https://www.drupal.org/",
+            ],
+            "search_results": [
+                {
+                    "title": "Drupal",
+                    "url": "https://www.drupal.org/",
+                    "source": "web",
+                }
+            ],
+        }
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, traceback):
+                return False
+
+            def read(self):
+                return json.dumps(response_body).encode("utf-8")
+
+        with patch(
+            "funnelcake_answer_observation.runner.request.urlopen",
+            return_value=FakeResponse(),
+        ) as urlopen:
+            observation_set = run_perplexity_provider(
+                REPO_ROOT / "fixtures/geo/drupal-perplexity-provider.json",
+                api_key="test-key",
+            )
+
+        request = urlopen.call_args.args[0]
+        payload = json.loads(request.data.decode("utf-8"))
+        observation = observation_set.observations[0]
+
+        self.assertEqual(request.full_url, "https://api.perplexity.ai/v1/sonar")
+        self.assertEqual(request.headers["Authorization"], "Bearer test-key")
+        self.assertEqual(payload["model"], "sonar-pro")
+        self.assertEqual(payload["messages"][0]["role"], "user")
+        self.assertEqual(observation.provider, "perplexity")
+        self.assertEqual(observation.timestamp, "2026-08-20T04:51:00Z")
+        self.assertEqual(observation.raw_answer, response_body["choices"][0]["message"]["content"])
+        self.assertEqual(observation.citations[0].url, "https://www.drupal.org/")
+        self.assertEqual(observation.retrieved_sources[0].url, "https://www.drupal.org/")
+
+    def test_perplexity_provider_requires_api_key(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "PERPLEXITY_API_KEY"):
+                run_perplexity_provider(REPO_ROOT / "fixtures/geo/drupal-perplexity-provider.json")
 
 
 if __name__ == "__main__":

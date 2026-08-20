@@ -20,6 +20,7 @@ from funnelcake_answer_observation import (
     load_observation_set,
     run_fixture_provider,
     run_openai_provider,
+    run_perplexity_provider,
     summarize_observations,
     validate_observation_file,
     write_observation_set,
@@ -239,6 +240,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path for the raw observation-set JSON output.",
     )
 
+    run_perplexity = subparsers.add_parser(
+        "run-observation-perplexity",
+        help="Run Perplexity Sonar prompts and write raw AEO/GEO observations.",
+    )
+    run_perplexity.add_argument("path", help="Path to a Perplexity provider JSON config.")
+    run_perplexity.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -357,6 +369,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     geo_run_openai.add_argument("path", help="Path to an OpenAI provider JSON config.")
     geo_run_openai.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
+    geo_run_perplexity = geo_subparsers.add_parser(
+        "run-perplexity",
+        help="Run Perplexity Sonar prompts and write raw AEO/GEO observations.",
+    )
+    geo_run_perplexity.add_argument("path", help="Path to a Perplexity provider JSON config.")
+    geo_run_perplexity.add_argument(
         "--out",
         required=True,
         help="Path for the raw observation-set JSON output.",
@@ -711,6 +734,19 @@ def run_observation_openai(path: str, output_path: str) -> str:
     )
 
 
+def run_observation_perplexity(path: str, output_path: str) -> str:
+    observation_set = run_perplexity_provider(path)
+    written_path = write_observation_set(observation_set, output_path)
+    return "\n".join(
+        [
+            f"run_observation_set={observation_set.id}",
+            f"provider={observation_set.attributes.get('provider', '')}",
+            f"observations={len(observation_set.observations)}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def print_observation_validation(path: str, json_output: bool) -> None:
     report = validate_observation_file(path)
     print(format_json(report) if json_output else format_observation_validation_report(report))
@@ -754,6 +790,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return run_observation_fixture(args.path, args.out)
     if args.geo_command == "run-openai":
         return run_observation_openai(args.path, args.out)
+    if args.geo_command == "run-perplexity":
+        return run_observation_perplexity(args.path, args.out)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -873,6 +911,8 @@ def main() -> None:
             print(run_observation_fixture(args.path, args.out))
         elif args.command == "run-observation-openai":
             print(run_observation_openai(args.path, args.out))
+        elif args.command == "run-observation-perplexity":
+            print(run_observation_perplexity(args.path, args.out))
         elif args.command == "compare-observations":
             print(compare_observations(args.baseline_path, args.followup_path, args.json))
         elif args.command == "geo":
