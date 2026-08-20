@@ -27,9 +27,18 @@ PYTHONPATH = ":".join(
 
 
 class GeoCliTest(unittest.TestCase):
-    def run_cli(self, *args: str) -> subprocess.CompletedProcess[str]:
+    def run_cli(
+        self,
+        *args: str,
+        extra_env: dict[str, str | None] | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         env = os.environ.copy()
         env["PYTHONPATH"] = PYTHONPATH
+        for key, value in (extra_env or {}).items():
+            if value is None:
+                env.pop(key, None)
+            else:
+                env[key] = value
         return subprocess.run(
             [sys.executable, "-m", "funnelcake_cli", *args],
             check=False,
@@ -180,6 +189,19 @@ class GeoCliTest(unittest.TestCase):
         self.assertIn("run_observation_set=drupal-fixture-provider-run", run_result.stdout)
         self.assertEqual(summary["response_count"], 2)
         self.assertEqual(summary["subject_visibility"]["mention_count"], 2)
+
+    def test_geo_run_openai_requires_api_key(self) -> None:
+        result = self.run_cli(
+            "geo",
+            "run-openai",
+            "fixtures/geo/drupal-openai-provider.json",
+            "--out",
+            "/tmp/unused-openai-observations.json",
+            extra_env={"OPENAI_API_KEY": None},
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("OPENAI_API_KEY is required", result.stderr)
 
 
 if __name__ == "__main__":

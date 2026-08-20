@@ -29,7 +29,7 @@ from .models import (
     Product,
     RetrievedSource,
 )
-from .runner import run_fixture_provider
+from .runner import run_fixture_provider, run_openai_provider
 from .sqlite_store import import_observation_set_sqlite
 
 __all__ = [
@@ -58,6 +58,7 @@ __all__ = [
     "import_observation_set_sqlite",
     "load_observation_set",
     "run_fixture_provider",
+    "run_openai_provider",
     "summarize_observations",
     "validate_observation_file",
     "validate_observation_set",

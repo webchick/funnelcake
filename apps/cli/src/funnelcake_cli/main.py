@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import asdict
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from funnelcake_answer_observation import (
     import_observation_set_sqlite,
     load_observation_set,
     run_fixture_provider,
+    run_openai_provider,
     summarize_observations,
     validate_observation_file,
     write_observation_set,
@@ -226,6 +228,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path for the raw observation-set JSON output.",
     )
 
+    run_openai = subparsers.add_parser(
+        "run-observation-openai",
+        help="Run OpenAI Responses API prompts and write raw AEO/GEO observations.",
+    )
+    run_openai.add_argument("path", help="Path to an OpenAI provider JSON config.")
+    run_openai.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -333,6 +346,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     geo_run_fixture.add_argument("path", help="Path to a fixture provider JSON config.")
     geo_run_fixture.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
+    geo_run_openai = geo_subparsers.add_parser(
+        "run-openai",
+        help="Run OpenAI Responses API prompts and write raw AEO/GEO observations.",
+    )
+    geo_run_openai.add_argument("path", help="Path to an OpenAI provider JSON config.")
+    geo_run_openai.add_argument(
         "--out",
         required=True,
         help="Path for the raw observation-set JSON output.",
@@ -674,6 +698,19 @@ def run_observation_fixture(path: str, output_path: str) -> str:
     )
 
 
+def run_observation_openai(path: str, output_path: str) -> str:
+    observation_set = run_openai_provider(path)
+    written_path = write_observation_set(observation_set, output_path)
+    return "\n".join(
+        [
+            f"run_observation_set={observation_set.id}",
+            f"provider={observation_set.attributes.get('provider', '')}",
+            f"observations={len(observation_set.observations)}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def print_observation_validation(path: str, json_output: bool) -> None:
     report = validate_observation_file(path)
     print(format_json(report) if json_output else format_observation_validation_report(report))
@@ -715,6 +752,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return extract_observation_products(args.path, args.out)
     if args.geo_command == "run-fixture":
         return run_observation_fixture(args.path, args.out)
+    if args.geo_command == "run-openai":
+        return run_observation_openai(args.path, args.out)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -795,64 +834,70 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.command in (None, "status"):
-        print(status())
-    elif args.command == "dashboard-demo":
-        print(dashboard_demo())
-    elif args.command == "dashboard-summary":
-        print(dashboard_summary(args.runs_dir, args.eligible_count))
-    elif args.command == "capture-run":
-        print(capture_run(args.path, args.artifacts_dir))
-    elif args.command == "show-run":
-        print(show_run(args.path))
-    elif args.command == "export-otlp":
-        print(export_otlp(args.path, args.out))
-    elif args.command == "send-phoenix":
-        print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
-    elif args.command == "validate-task":
-        print(validate_task(args.path))
-    elif args.command == "observe-answers":
-        print(observe_answers(args.path, args.json))
-    elif args.command == "inspect-observation":
-        print(inspect_observation(args.path, args.observation_id))
-    elif args.command == "inspect-product":
-        print(inspect_product(args.path, args.product))
-    elif args.command == "inspect-prompt":
-        print(inspect_prompt(args.path, args.prompt_id))
-    elif args.command == "inspect-domain":
-        print(inspect_domain(args.path, args.domain))
-    elif args.command == "normalize-observations":
-        print(normalize_observations(args.path, args.out))
-    elif args.command == "validate-observations":
-        print_observation_validation(args.path, args.json)
-    elif args.command == "import-observations-sqlite":
-        print(import_observations_sqlite(args.path, args.db))
-    elif args.command == "extract-observation-products":
-        print(extract_observation_products(args.path, args.out))
-    elif args.command == "run-observation-fixture":
-        print(run_observation_fixture(args.path, args.out))
-    elif args.command == "compare-observations":
-        print(compare_observations(args.baseline_path, args.followup_path, args.json))
-    elif args.command == "geo":
-        if args.geo_command == "validate":
+    try:
+        if args.command in (None, "status"):
+            print(status())
+        elif args.command == "dashboard-demo":
+            print(dashboard_demo())
+        elif args.command == "dashboard-summary":
+            print(dashboard_summary(args.runs_dir, args.eligible_count))
+        elif args.command == "capture-run":
+            print(capture_run(args.path, args.artifacts_dir))
+        elif args.command == "show-run":
+            print(show_run(args.path))
+        elif args.command == "export-otlp":
+            print(export_otlp(args.path, args.out))
+        elif args.command == "send-phoenix":
+            print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
+        elif args.command == "validate-task":
+            print(validate_task(args.path))
+        elif args.command == "observe-answers":
+            print(observe_answers(args.path, args.json))
+        elif args.command == "inspect-observation":
+            print(inspect_observation(args.path, args.observation_id))
+        elif args.command == "inspect-product":
+            print(inspect_product(args.path, args.product))
+        elif args.command == "inspect-prompt":
+            print(inspect_prompt(args.path, args.prompt_id))
+        elif args.command == "inspect-domain":
+            print(inspect_domain(args.path, args.domain))
+        elif args.command == "normalize-observations":
+            print(normalize_observations(args.path, args.out))
+        elif args.command == "validate-observations":
             print_observation_validation(args.path, args.json)
-            return
-        print(geo_command(args))
-    elif args.command == "run-task":
-        print(run_task(args.path, args.artifacts_dir, args.agent))
-    elif args.command == "evaluate-run":
-        print(evaluate_run_command(args.task_path, args.run_path, args.write, args.out))
-    elif args.command == "diagnose-run":
-        print(
-            diagnose_run_command(
-                args.task_path,
-                args.run_path,
-                args.evaluation,
-                args.write,
-                args.out,
+        elif args.command == "import-observations-sqlite":
+            print(import_observations_sqlite(args.path, args.db))
+        elif args.command == "extract-observation-products":
+            print(extract_observation_products(args.path, args.out))
+        elif args.command == "run-observation-fixture":
+            print(run_observation_fixture(args.path, args.out))
+        elif args.command == "run-observation-openai":
+            print(run_observation_openai(args.path, args.out))
+        elif args.command == "compare-observations":
+            print(compare_observations(args.baseline_path, args.followup_path, args.json))
+        elif args.command == "geo":
+            if args.geo_command == "validate":
+                print_observation_validation(args.path, args.json)
+                return
+            print(geo_command(args))
+        elif args.command == "run-task":
+            print(run_task(args.path, args.artifacts_dir, args.agent))
+        elif args.command == "evaluate-run":
+            print(evaluate_run_command(args.task_path, args.run_path, args.write, args.out))
+        elif args.command == "diagnose-run":
+            print(
+                diagnose_run_command(
+                    args.task_path,
+                    args.run_path,
+                    args.evaluation,
+                    args.write,
+                    args.out,
+                )
             )
-        )
-    elif args.command == "show-diagnosis":
-        print(show_diagnosis_command(args.run_path, args.diagnosis_id))
-    elif args.command == "run-suite":
-        print(run_suite_command(args.paths, args.artifacts_dir, args.agent, args.eligible_count))
+        elif args.command == "show-diagnosis":
+            print(show_diagnosis_command(args.run_path, args.diagnosis_id))
+        elif args.command == "run-suite":
+            print(run_suite_command(args.paths, args.artifacts_dir, args.agent, args.eligible_count))
+    except (RuntimeError, ValueError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc

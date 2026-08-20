@@ -233,6 +233,21 @@ emits raw observations with provider/model/run metadata and raw request/response
 payloads. Live answer-engine adapters should produce the same observation-set
 shape.
 
+## OpenAI Provider Runs
+
+Use the OpenAI provider to collect real answer observations through the
+Responses API:
+
+```bash
+OPENAI_API_KEY=... funnelcake geo run-openai openai-provider.json --out raw-observations.json
+funnelcake geo extract-products raw-observations.json --out extracted-observations.json
+```
+
+The v0 OpenAI adapter sends each prompt to `/v1/responses`, stores the raw
+provider response, captures `output_text` or message text as `raw_answer`, and
+extracts URL annotations as citations when present. If `search_enabled` is true
+in the provider config, the request includes the hosted web search tool.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

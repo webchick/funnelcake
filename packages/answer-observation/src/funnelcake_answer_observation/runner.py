@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
+from urllib import request
 
 from .models import AnswerObservation, Citation, ObservationSet, ProbePrompt, Product
 
@@ -74,6 +76,135 @@ def run_fixture_provider(path: str | Path) -> ObservationSet:
             **raw.get("attributes", {}),
         },
     )
+
+
+def run_openai_provider(path: str | Path, api_key: str | None = None) -> ObservationSet:
+    with Path(path).open(encoding="utf-8") as config_file:
+        raw = json.load(config_file)
+
+    key = api_key or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise RuntimeError("OPENAI_API_KEY is required for the OpenAI provider")
+
+    prompts = tuple(_prompt(item) for item in raw.get("prompts", []))
+    products = tuple(_product(item) for item in raw.get("products", []))
+    provider = raw.get("provider", "openai")
+    model = raw["model"]
+    run_id = raw["id"]
+    observations = []
+    for index, prompt in enumerate(prompts, start=1):
+        response = _openai_response(
+            api_key=key,
+            model=model,
+            prompt=prompt.prompt,
+            search_enabled=raw.get("search_enabled", False),
+        )
+        observations.append(
+            AnswerObservation(
+                id=f"{run_id}-obs-{index:03d}",
+                run_id=run_id,
+                prompt_id=prompt.id,
+                prompt=prompt.prompt,
+                raw_answer=_response_text(response),
+                engine="responses",
+                surface=raw.get("surface", "api"),
+                provider=provider,
+                model=model,
+                model_version=raw.get("model_version"),
+                search_enabled=raw.get("search_enabled", False),
+                country=raw.get("country"),
+                region=prompt.region,
+                language=prompt.language,
+                timestamp=response.get("created_at"),
+                run_number=raw.get("run_number", 1),
+                repetition=raw.get("repetition", 1),
+                raw_request={
+                    "prompt_id": prompt.id,
+                    "prompt": prompt.prompt,
+                    "provider": provider,
+                    "model": model,
+                    "search_enabled": raw.get("search_enabled", False),
+                },
+                raw_response=response,
+                citations=_response_citations(response),
+            )
+        )
+
+    if not observations:
+        raise ValueError("OpenAI provider config requires at least one prompt")
+
+    return ObservationSet(
+        id=run_id,
+        subject_entity=_field(raw, "subject_entity", "subjectEntity"),
+        subject_product_id=_field(raw, "subject_product_id", "subjectProductId"),
+        description=raw.get("description"),
+        prompts=prompts,
+        products=products,
+        observations=tuple(observations),
+        attributes={
+            "provider_config": str(path),
+            "provider": provider,
+            **raw.get("attributes", {}),
+        },
+    )
+
+
+def _openai_response(
+    api_key: str,
+    model: str,
+    prompt: str,
+    search_enabled: bool,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "model": model,
+        "input": prompt,
+        "store": False,
+    }
+    if search_enabled:
+        payload["tools"] = [{"type": "web_search"}]
+    body = json.dumps(payload).encode("utf-8")
+    api_request = request.Request(
+        "https://api.openai.com/v1/responses",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with request.urlopen(api_request, timeout=120) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _response_text(response: dict[str, Any]) -> str:
+    if isinstance(response.get("output_text"), str):
+        return response["output_text"]
+    texts = []
+    for item in response.get("output", []):
+        for content in item.get("content", []):
+            text = content.get("text")
+            if isinstance(text, str):
+                texts.append(text)
+    return "\n".join(texts)
+
+
+def _response_citations(response: dict[str, Any]) -> tuple[Citation, ...]:
+    citations = []
+    seen_urls = set()
+    for item in response.get("output", []):
+        for content in item.get("content", []):
+            for annotation in content.get("annotations", []):
+                url = annotation.get("url")
+                if not url or url in seen_urls:
+                    continue
+                seen_urls.add(url)
+                citations.append(
+                    Citation(
+                        url=url,
+                        title=annotation.get("title"),
+                    )
+                )
+    return tuple(citations)
 
 
 def _prompt(record: dict[str, Any]) -> ProbePrompt:
