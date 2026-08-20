@@ -10,6 +10,7 @@ from funnelcake_discover_eval import (
     format_trial_run,
     load_trial_run,
     load_trial_run_artifact,
+    load_trial_runs_dir,
     run_task_spec,
     send_run_to_phoenix,
     write_otlp_json,
@@ -17,7 +18,13 @@ from funnelcake_discover_eval import (
 )
 from funnelcake_intent_extraction import IntentProfile
 from funnelcake_platform_profile import PlatformProfile
-from funnelcake_reporting import ReportSpec, build_dashboard_overview, load_dashboard_fixture
+from funnelcake_reporting import (
+    ReportSpec,
+    build_dashboard_from_trial_runs,
+    build_dashboard_overview,
+    format_dashboard_overview,
+    load_dashboard_fixture,
+)
 from funnelcake_signal_mining import SignalSet
 
 
@@ -26,6 +33,21 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command")
     subparsers.add_parser("status", help="Show scaffold status.")
     subparsers.add_parser("dashboard-demo", help="Render the dashboard demo fixture.")
+
+    dashboard_summary = subparsers.add_parser(
+        "dashboard-summary",
+        help="Render a dashboard summary from captured run artifacts.",
+    )
+    dashboard_summary.add_argument(
+        "--runs-dir",
+        default="artifacts/runs",
+        help="Directory containing <trial_id>/run.json artifacts.",
+    )
+    dashboard_summary.add_argument(
+        "--eligible-count",
+        type=int,
+        help="Eligible intent count to use for conversion math.",
+    )
 
     capture_run = subparsers.add_parser(
         "capture-run",
@@ -149,6 +171,15 @@ def dashboard_demo() -> str:
     return "\n".join(lines)
 
 
+def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
+    runs = load_trial_runs_dir(runs_dir)
+    if not runs:
+        return f"No runs found in {runs_dir}"
+
+    overview = build_dashboard_from_trial_runs(runs, eligible_count=eligible_count)
+    return format_dashboard_overview(overview)
+
+
 def capture_run(path: str, artifacts_dir: str) -> str:
     run = load_trial_run(path)
     output_dir = write_trial_run(run, artifacts_dir)
@@ -235,6 +266,8 @@ def main() -> None:
         print(status())
     elif args.command == "dashboard-demo":
         print(dashboard_demo())
+    elif args.command == "dashboard-summary":
+        print(dashboard_summary(args.runs_dir, args.eligible_count))
     elif args.command == "capture-run":
         print(capture_run(args.path, args.artifacts_dir))
     elif args.command == "show-run":

@@ -181,6 +181,17 @@ def load_trial_run_artifact(path: str | Path) -> TrialRun:
     return load_trial_run(artifact_path)
 
 
+def load_trial_runs_dir(path: str | Path) -> tuple[TrialRun, ...]:
+    runs_dir = Path(path)
+    if not runs_dir.exists():
+        return ()
+
+    runs = []
+    for run_file in sorted(runs_dir.glob("*/run.json")):
+        runs.append(load_trial_run(run_file))
+    return tuple(runs)
+
+
 def format_trial_run(run: TrialRun) -> str:
     lines = [
         f"Trial {run.trial.id}",

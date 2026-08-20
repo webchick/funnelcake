@@ -2,6 +2,7 @@ from .capture import (
     format_trial_run,
     load_trial_run,
     load_trial_run_artifact,
+    load_trial_runs_dir,
     validate_trial_run,
     write_trial_run,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "format_trial_run",
     "load_trial_run",
     "load_trial_run_artifact",
+    "load_trial_runs_dir",
     "send_run_to_phoenix",
     "run_task_spec",
     "trial_run_to_otlp_json",

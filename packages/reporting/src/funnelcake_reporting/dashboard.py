@@ -3,7 +3,14 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
-from funnelcake_shared import DessertStage, Diagnosis, Failure, StageMetric, Trial
+from funnelcake_shared import (
+    DessertStage,
+    Diagnosis,
+    Failure,
+    StageMetric,
+    Trial,
+    TrialRun,
+)
 
 STAGE_ORDER = (
     DessertStage.DISCOVER,
@@ -175,3 +182,78 @@ def build_dashboard_overview(
         biggest_leak=find_biggest_leak(trials, failures, clusters),
         top_failure_clusters=clusters[:3],
     )
+
+
+def build_dashboard_from_trial_runs(
+    runs: tuple[TrialRun, ...],
+    eligible_count: int | None = None,
+) -> DashboardOverview:
+    trials = tuple(run.trial for run in runs)
+    failures = tuple(failure for run in runs for failure in run.failures)
+    metrics = build_stage_metrics_from_runs(runs)
+
+    return build_dashboard_overview(
+        trials=trials,
+        failures=failures,
+        diagnoses=(),
+        metrics=metrics,
+        eligible_count=eligible_count if eligible_count is not None else max(len(runs), 1),
+    )
+
+
+def build_stage_metrics_from_runs(runs: tuple[TrialRun, ...]) -> tuple[StageMetric, ...]:
+    by_stage: dict[DessertStage, list[TrialRun]] = {stage: [] for stage in STAGE_ORDER}
+    for run in runs:
+        by_stage[run.trial.stage].append(run)
+
+    metrics = []
+    for stage in STAGE_ORDER:
+        stage_runs = by_stage[stage]
+        if not stage_runs:
+            metrics.append(StageMetric(stage=stage, name="score", score=0.0))
+            continue
+
+        passed = sum(1 for run in stage_runs if run.final_state.passed)
+        metrics.append(
+            StageMetric(
+                stage=stage,
+                name="score",
+                score=(passed / len(stage_runs)) * 100,
+                numerator=passed,
+                denominator=len(stage_runs),
+            )
+        )
+
+    return tuple(metrics)
+
+
+def format_dashboard_overview(overview: DashboardOverview) -> str:
+    lines = ["DESSERT dashboard summary", "", "Stage Scores"]
+    for score in overview.stage_scores:
+        lines.append(
+            f"{score.stage.value}: {score.score:.0f} "
+            f"trials={score.trial_count}"
+        )
+
+    if overview.biggest_leak is not None:
+        leak = overview.biggest_leak
+        lines.extend(
+            [
+                "",
+                "Biggest Leak",
+                f"{leak.stage.value}: {leak.failed_trials}/{leak.total_trials} "
+                f"({leak.failure_rate:.0%})",
+            ]
+        )
+        for cluster in leak.top_clusters:
+            lines.append(f"- {cluster.failure_type}: {cluster.affected_trials}")
+
+    if overview.top_failure_clusters:
+        lines.extend(["", "Top Failure Clusters"])
+        for cluster in overview.top_failure_clusters:
+            lines.append(
+                f"- {cluster.stage.value}/{cluster.failure_type}: "
+                f"{cluster.affected_trials}"
+            )
+
+    return "\n".join(lines)
