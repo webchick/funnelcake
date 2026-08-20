@@ -1,0 +1,64 @@
+{
+  "id": "setup-auth-discovery",
+  "name": "Create an API token with deployment scopes",
+  "stage": "setup",
+  "task_family": "setup/auth-discovery",
+  "prompt": "Using only publicly discoverable product documentation, create an API token with the scopes required to deploy the example application.",
+  "final_state": {
+    "expected": "An API token exists with the scopes required to deploy the example application.",
+    "verification": "Verify through product state, API response, or documented credential inventory that the token exists and has the required deployment scopes."
+  },
+  "checkpoints": [
+    {
+      "id": "auth-docs-located",
+      "description": "Authentication documentation was located from API onboarding or public documentation navigation.",
+      "stage": "setup",
+      "assertions": [
+        {
+          "id": "opened-auth-doc-url",
+          "description": "The trace includes navigation to authentication or access-token documentation.",
+          "event_type": "navigation",
+          "attributes": {
+            "url.full": "/docs/authentication"
+          }
+        }
+      ]
+    },
+    {
+      "id": "required-scopes-identified",
+      "description": "The required token scopes were identified before token creation.",
+      "stage": "setup",
+      "assertions": [
+        {
+          "id": "scope-selection-recorded",
+          "description": "The trace records the scopes selected or inferred for the token.",
+          "event_type": "tool_call",
+          "attributes": {
+            "funnelcake.assertion": "required_scopes_identified"
+          }
+        }
+      ]
+    },
+    {
+      "id": "token-existence-verified",
+      "description": "The final product state was independently verified.",
+      "stage": "setup",
+      "assertions": [
+        {
+          "id": "api-token-exists",
+          "description": "The trace includes a final state verification event for token existence.",
+          "event_type": "state_verification",
+          "attributes": {
+            "funnelcake.assertion": "api_token_exists"
+          }
+        }
+      ]
+    }
+  ],
+  "failure_type_hints": [
+    "auth_docs_not_found",
+    "credential_human_required",
+    "insufficient_scope",
+    "browser_only_flow"
+  ]
+}

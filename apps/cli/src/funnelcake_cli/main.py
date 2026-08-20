@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from funnelcake_benchmark_builder import BenchmarkSpec
+from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_task_spec
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
     PhoenixDependencyError,
@@ -72,6 +72,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--api-key",
         help="Phoenix API key for Phoenix Cloud or authenticated deployments.",
     )
+
+    validate_task = subparsers.add_parser(
+        "validate-task",
+        help="Validate and print a benchmark task spec.",
+    )
+    validate_task.add_argument("path", help="Path to a benchmark task JSON spec.")
     return parser
 
 
@@ -187,6 +193,10 @@ def send_phoenix(
     )
 
 
+def validate_task(path: str) -> str:
+    return format_task_spec(load_task_spec(path))
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -203,3 +213,5 @@ def main() -> None:
         print(export_otlp(args.path, args.out))
     elif args.command == "send-phoenix":
         print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
+    elif args.command == "validate-task":
+        print(validate_task(args.path))
