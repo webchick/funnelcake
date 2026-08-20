@@ -14,6 +14,19 @@ trials.
 This package implements levels 1 and 2. Experiment comparison should build on
 these observation sets instead of using raw answer text directly.
 
+## Design Principles
+
+- Evidence before scores: metrics are computed from stored observations and
+  should remain traceable to raw answers, citations, and provider metadata.
+- Raw observations are immutable: provider answers and raw request/response
+  payloads are preserved so derived analyses can be rerun.
+- Separate observation from interpretation: reports may describe correlations,
+  but causal explanations stay as hypotheses or later experiments.
+- Treat AI answers probabilistically: repeated runs are first-class, and
+  recommendation consistency is reported as a frequency.
+- Keep v0 small: JSON artifacts and CLI output come before dashboards,
+  databases, provider orchestration, or hosted services.
+
 ## Standards Alignment
 
 There is no single standard for AEO/GEO visibility observations, so the native
@@ -50,3 +63,35 @@ Each observation records:
 
 Funnelcake adds structured `mentions`, `retrieved_sources`, and `claims` so
 aggregate reports can separate visibility from supporting evidence.
+
+## Prompt And Product Metadata
+
+Observation sets may include a prompt corpus and product registry.
+
+Prompts represent realistic user problems rather than SEO keywords. They can
+carry optional `intent`, `persona`, `task`, `funnel_stage`, `language`,
+`region`, and `tags` metadata. The optional `task` field connects discovery
+observations to later executable agent evals.
+
+Products use canonical IDs and aliases so extracted mentions can normalize
+`Drupal`, `Drupal CMS`, `Drupal 11`, and similar names to one product ID.
+
+## Initial Metrics
+
+`observe-answers` reports:
+
+- visibility: how often the subject appeared
+- recommendation rate: how often the subject was recommended
+- first-choice rate: how often the subject was the first recommendation
+- share of recommendation: share among recommendation appearances
+- citation and retrieval counts by URL and domain
+- consistency: recommendation frequency by prompt and provider
+
+These are observational metrics. They should not be phrased as causal claims.
+
+## Deferred
+
+The broader `geo.md` plan also sketches provider adapters, SQLite persistence,
+provider failure handling, report/inspect subcommands, run comparison, and
+manual hypotheses. Those are compatible with the current schema, but are
+deferred until the JSON artifact shape and metric semantics settle.

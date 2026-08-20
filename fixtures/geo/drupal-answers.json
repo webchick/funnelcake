@@ -1,7 +1,79 @@
 {
   "id": "drupal-cms-selection-sample",
   "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
   "description": "Sample AEO/GEO answer observations for CMS selection prompts.",
+  "prompts": [
+    {
+      "id": "cms-enterprise-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ]
+    },
+    {
+      "id": "cms-marketing-001",
+      "prompt": "What CMS is easiest for a small marketing site?",
+      "intent": "solution_discovery",
+      "persona": "marketer",
+      "task": "launch_marketing_site",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "marketing-site"
+      ]
+    },
+    {
+      "id": "cms-government-001",
+      "prompt": "Which CMS should a government agency shortlist for accessibility and governance?",
+      "intent": "solution_discovery",
+      "persona": "public-sector-technology-leader",
+      "task": "shortlist_government_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "government",
+        "accessibility",
+        "governance"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal 11",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS",
+        "WordPress.org"
+      ]
+    },
+    {
+      "id": "webflow",
+      "name": "Webflow",
+      "aliases": []
+    }
+  ],
   "observations": [
     {
       "id": "obs-001",
@@ -9,45 +81,64 @@
       "prompt": "What CMS should a large university use for many department websites?",
       "engine": "chat",
       "surface": "web",
+      "provider": "example",
       "model": "example-model",
       "model_version": "2026-08",
       "search_enabled": true,
       "country": "US",
+      "region": "us",
       "language": "en",
       "timestamp": "2026-08-20T03:30:00Z",
       "run_number": 1,
+      "repetition": 1,
       "raw_answer": "Drupal is a strong fit for large universities because it supports complex permissions, multisite governance, and structured content. WordPress can also work for smaller departmental needs.",
+      "raw_request": {
+        "prompt_id": "cms-enterprise-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
       "mentions": [
         {
           "entity": "Drupal",
+          "product_id": "drupal",
           "role": "recommended",
-          "rank": 1
+          "rank": 1,
+          "stance": "positive"
         },
         {
           "entity": "WordPress",
+          "product_id": "wordpress",
           "role": "alternative",
-          "rank": 2
+          "rank": 2,
+          "stance": "neutral"
         }
       ],
       "citations": [
         {
           "url": "https://www.drupal.org/case-study/higher-education",
           "title": "Drupal higher education case studies",
-          "entity": "Drupal"
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
         }
       ],
       "retrieved_sources": [
         {
           "url": "https://www.drupal.org/",
           "title": "Drupal",
+          "domain": "drupal.org",
           "rank": 1,
-          "entity": "Drupal"
+          "entity": "Drupal",
+          "product_id": "drupal"
         },
         {
           "url": "https://wordpress.org/",
           "title": "WordPress",
+          "domain": "wordpress.org",
           "rank": 2,
-          "entity": "WordPress"
+          "entity": "WordPress",
+          "product_id": "wordpress"
         }
       ],
       "claims": [
@@ -67,50 +158,71 @@
       "prompt": "What CMS is easiest for a small marketing site?",
       "engine": "chat",
       "surface": "web",
+      "provider": "example",
       "model": "example-model",
       "model_version": "2026-08",
       "search_enabled": true,
       "country": "US",
+      "region": "us",
       "language": "en",
       "timestamp": "2026-08-20T03:31:00Z",
       "run_number": 1,
+      "repetition": 1,
       "raw_answer": "For a small marketing site, WordPress or Webflow are usually easier choices. Drupal is powerful but may be more than this scenario needs.",
+      "raw_request": {
+        "prompt_id": "cms-marketing-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
       "mentions": [
         {
           "entity": "WordPress",
+          "product_id": "wordpress",
           "role": "recommended",
-          "rank": 1
+          "rank": 1,
+          "stance": "positive"
         },
         {
           "entity": "Webflow",
+          "product_id": "webflow",
           "role": "recommended",
-          "rank": 2
+          "rank": 2,
+          "stance": "positive"
         },
         {
           "entity": "Drupal",
+          "product_id": "drupal",
           "role": "mentioned",
-          "rank": 3
+          "rank": 3,
+          "stance": "neutral"
         }
       ],
       "citations": [
         {
           "url": "https://wordpress.org/",
           "title": "WordPress",
-          "entity": "WordPress"
+          "domain": "wordpress.org",
+          "entity": "WordPress",
+          "product_id": "wordpress"
         }
       ],
       "retrieved_sources": [
         {
           "url": "https://wordpress.org/",
           "title": "WordPress",
+          "domain": "wordpress.org",
           "rank": 1,
-          "entity": "WordPress"
+          "entity": "WordPress",
+          "product_id": "wordpress"
         },
         {
           "url": "https://webflow.com/",
           "title": "Webflow",
+          "domain": "webflow.com",
           "rank": 2,
-          "entity": "Webflow"
+          "entity": "Webflow",
+          "product_id": "webflow"
         }
       ],
       "claims": [
@@ -127,39 +239,56 @@
       "prompt": "Which CMS should a government agency shortlist for accessibility and governance?",
       "engine": "chat",
       "surface": "web",
+      "provider": "example",
       "model": "example-model",
       "model_version": "2026-08",
       "search_enabled": true,
       "country": "US",
+      "region": "us",
       "language": "en",
       "timestamp": "2026-08-20T03:32:00Z",
       "run_number": 1,
+      "repetition": 1,
       "raw_answer": "Drupal should be on the shortlist for government sites with governance, accessibility, and content modeling requirements. WordPress is also common, but Drupal is often chosen for complex public-sector platforms.",
+      "raw_request": {
+        "prompt_id": "cms-government-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
       "mentions": [
         {
           "entity": "Drupal",
+          "product_id": "drupal",
           "role": "recommended",
-          "rank": 1
+          "rank": 1,
+          "stance": "positive"
         },
         {
           "entity": "WordPress",
+          "product_id": "wordpress",
           "role": "alternative",
-          "rank": 2
+          "rank": 2,
+          "stance": "neutral"
         }
       ],
       "citations": [
         {
           "url": "https://www.drupal.org/industries/government",
           "title": "Drupal for government",
-          "entity": "Drupal"
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
         }
       ],
       "retrieved_sources": [
         {
           "url": "https://www.drupal.org/industries/government",
           "title": "Drupal for government",
+          "domain": "drupal.org",
           "rank": 1,
-          "entity": "Drupal"
+          "entity": "Drupal",
+          "product_id": "drupal"
         }
       ],
       "claims": [

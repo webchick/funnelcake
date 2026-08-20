@@ -8,6 +8,8 @@ from .models import (
     EntityVisibility,
     ObservationSet,
     ObservationSummary,
+    ProbePrompt,
+    Product,
     RetrievedSource,
 )
 
@@ -19,6 +21,8 @@ __all__ = [
     "EntityVisibility",
     "ObservationSet",
     "ObservationSummary",
+    "ProbePrompt",
+    "Product",
     "RetrievedSource",
     "format_observation_summary",
     "load_observation_set",
