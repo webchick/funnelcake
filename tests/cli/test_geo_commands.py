@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -83,6 +84,25 @@ class GeoCliTest(unittest.TestCase):
         summary = json.loads(result.stdout)
         self.assertEqual(summary["observation_set_id"], "drupal-raw-collected-sample")
         self.assertEqual(summary["subject_visibility"]["recommended_count"], 1)
+
+    def test_geo_normalize_writes_canonical_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "normalized.json"
+            result = self.run_cli(
+                "geo",
+                "normalize",
+                "fixtures/geo/drupal-raw-collected.json",
+                "--out",
+                str(output_path),
+            )
+            normalized = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("normalized_observation_set=drupal-raw-collected-sample", result.stdout)
+        self.assertEqual(normalized["subject_entity"], "Drupal")
+        self.assertNotIn("subjectEntity", normalized)
+        self.assertEqual(normalized["observations"][0]["prompt_id"], "cms-enterprise-raw-001")
+        self.assertNotIn("promptId", normalized["observations"][0])
 
 
 if __name__ == "__main__":
