@@ -16,7 +16,9 @@ from funnelcake_discover_eval import (
     load_trial_run_artifact,
     load_trial_runs_dir,
     run_task_spec,
+    run_task_suite,
     send_run_to_phoenix,
+    format_suite_run,
     write_diagnosis_bundle,
     write_otlp_json,
     write_run_evaluation,
@@ -158,6 +160,31 @@ def build_parser() -> argparse.ArgumentParser:
     diagnose_run.add_argument(
         "--out",
         help="Path for diagnosis JSON output. Implies --write.",
+    )
+
+    run_suite = subparsers.add_parser(
+        "run-suite",
+        help="Run, evaluate, diagnose, and summarize one or more task specs.",
+    )
+    run_suite.add_argument(
+        "paths",
+        nargs="+",
+        help="Task spec JSON files or directories containing task spec JSON files.",
+    )
+    run_suite.add_argument(
+        "--artifacts-dir",
+        default="artifacts",
+        help="Directory where normalized run artifacts should be written.",
+    )
+    run_suite.add_argument(
+        "--agent",
+        default="manual-placeholder",
+        help="Agent or harness name to record on generated trials.",
+    )
+    run_suite.add_argument(
+        "--eligible-count",
+        type=int,
+        help="Eligible intent count to use for conversion math.",
     )
     return parser
 
@@ -339,6 +366,22 @@ def diagnose_run_command(
     return "\n".join(lines)
 
 
+def run_suite_command(
+    paths: list[str],
+    artifacts_dir: str,
+    agent: str,
+    eligible_count: int | None,
+) -> str:
+    suite = run_task_suite(tuple(paths), artifacts_dir=artifacts_dir, agent=agent)
+    runs_dir = str(Path(artifacts_dir) / "runs")
+    return "\n\n".join(
+        [
+            format_suite_run(suite),
+            dashboard_summary(runs_dir, eligible_count),
+        ]
+    )
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -373,3 +416,5 @@ def main() -> None:
                 args.out,
             )
         )
+    elif args.command == "run-suite":
+        print(run_suite_command(args.paths, args.artifacts_dir, args.agent, args.eligible_count))

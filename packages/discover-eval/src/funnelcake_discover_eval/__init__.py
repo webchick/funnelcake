@@ -27,6 +27,7 @@ from .models import DiscoveryEvalPlan, DiscoveryEvalResult
 from .otlp import trial_run_to_otlp_json, write_otlp_json
 from .phoenix import PhoenixDependencyError, send_run_to_phoenix, trial_run_to_otlp_protobuf
 from .runner import build_placeholder_trial_run, run_task_spec
+from .suite import SuiteRun, SuiteRunResult, discover_task_specs, format_suite_run, run_task_suite
 
 __all__ = [
     "DiscoveryEvalPlan",
@@ -36,7 +37,10 @@ __all__ = [
     "CheckpointEvaluation",
     "DiagnosisBundle",
     "RunEvaluation",
+    "SuiteRun",
+    "SuiteRunResult",
     "build_placeholder_trial_run",
+    "discover_task_specs",
     "diagnose_run",
     "diagnose_task_run",
     "evaluate_run",
@@ -44,12 +48,14 @@ __all__ = [
     "format_diagnosis_bundle",
     "format_trial_run",
     "format_run_evaluation",
+    "format_suite_run",
     "load_run_evaluation",
     "load_trial_run",
     "load_trial_run_artifact",
     "load_trial_runs_dir",
     "send_run_to_phoenix",
     "run_task_spec",
+    "run_task_suite",
     "trial_run_to_otlp_json",
     "trial_run_to_otlp_protobuf",
     "validate_trial_run",
