@@ -44,11 +44,13 @@ python3 -m pip install -e '.[phoenix]'
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli send-phoenix artifacts/runs/FC-0001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli validate-task fixtures/tasks/setup-auth-discovery.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo summary fixtures/geo/drupal-answers.json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo summary fixtures/geo/drupal-answers.json --json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-observation fixtures/geo/drupal-answers.json obs-001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-product fixtures/geo/drupal-answers.json drupal
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-domain fixtures/geo/drupal-answers.json drupal.org
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo compare fixtures/geo/drupal-answers.json fixtures/geo/drupal-answers-followup.json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo compare fixtures/geo/drupal-answers.json fixtures/geo/drupal-answers-followup.json --json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli run-task fixtures/tasks/setup-auth-discovery.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli evaluate-run fixtures/tasks/setup-auth-discovery.json artifacts/runs/FC-0001 --write
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli diagnose-run fixtures/tasks/setup-auth-discovery.json artifacts/runs/FC-0001 --write

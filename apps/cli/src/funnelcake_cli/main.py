@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+from dataclasses import asdict
 from pathlib import Path
 
 from funnelcake_answer_observation import (
@@ -129,6 +131,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Summarize AEO/GEO answer observations from a JSON observation set.",
     )
     observe_answers.add_argument("path", help="Path to an answer observation JSON file.")
+    observe_answers.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the summary as machine-readable JSON.",
+    )
 
     inspect_observation = subparsers.add_parser(
         "inspect-observation",
@@ -164,6 +171,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     compare_observations.add_argument("baseline_path", help="Path to the baseline observation JSON file.")
     compare_observations.add_argument("followup_path", help="Path to the follow-up observation JSON file.")
+    compare_observations.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the comparison as machine-readable JSON.",
+    )
 
     geo = subparsers.add_parser(
         "geo",
@@ -176,6 +188,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Summarize AEO/GEO answer observations from a JSON observation set.",
     )
     geo_summary.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_summary.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the summary as machine-readable JSON.",
+    )
 
     geo_inspect_observation = geo_subparsers.add_parser(
         "inspect-observation",
@@ -211,6 +228,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     geo_compare.add_argument("baseline_path", help="Path to the baseline observation JSON file.")
     geo_compare.add_argument("followup_path", help="Path to the follow-up observation JSON file.")
+    geo_compare.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the comparison as machine-readable JSON.",
+    )
 
     run_task = subparsers.add_parser(
         "run-task",
@@ -446,9 +468,12 @@ def validate_task(path: str) -> str:
     return format_task_spec(load_task_spec(path))
 
 
-def observe_answers(path: str) -> str:
+def observe_answers(path: str, json_output: bool = False) -> str:
     observation_set = load_observation_set(path)
-    return format_observation_summary(summarize_observations(observation_set))
+    summary = summarize_observations(observation_set)
+    if json_output:
+        return format_json(summary)
+    return format_observation_summary(summary)
 
 
 def inspect_observation(path: str, observation_id: str) -> str:
@@ -471,15 +496,22 @@ def inspect_domain(path: str, domain: str) -> str:
     return format_domain_detail(observation_set, domain)
 
 
-def compare_observations(baseline_path: str, followup_path: str) -> str:
+def compare_observations(
+    baseline_path: str,
+    followup_path: str,
+    json_output: bool = False,
+) -> str:
     baseline = load_observation_set(baseline_path)
     followup = load_observation_set(followup_path)
-    return format_observation_comparison(compare_observation_sets(baseline, followup))
+    comparison = compare_observation_sets(baseline, followup)
+    if json_output:
+        return format_json(comparison)
+    return format_observation_comparison(comparison)
 
 
 def geo_command(args: argparse.Namespace) -> str:
     if args.geo_command == "summary":
-        return observe_answers(args.path)
+        return observe_answers(args.path, args.json)
     if args.geo_command == "inspect-observation":
         return inspect_observation(args.path, args.observation_id)
     if args.geo_command == "inspect-product":
@@ -489,8 +521,12 @@ def geo_command(args: argparse.Namespace) -> str:
     if args.geo_command == "inspect-domain":
         return inspect_domain(args.path, args.domain)
     if args.geo_command == "compare":
-        return compare_observations(args.baseline_path, args.followup_path)
+        return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
+
+
+def format_json(value: object) -> str:
+    return json.dumps(asdict(value), indent=2)
 
 
 def run_task(path: str, artifacts_dir: str, agent: str) -> str:
@@ -581,7 +617,7 @@ def main() -> None:
     elif args.command == "validate-task":
         print(validate_task(args.path))
     elif args.command == "observe-answers":
-        print(observe_answers(args.path))
+        print(observe_answers(args.path, args.json))
     elif args.command == "inspect-observation":
         print(inspect_observation(args.path, args.observation_id))
     elif args.command == "inspect-product":
@@ -591,7 +627,7 @@ def main() -> None:
     elif args.command == "inspect-domain":
         print(inspect_domain(args.path, args.domain))
     elif args.command == "compare-observations":
-        print(compare_observations(args.baseline_path, args.followup_path))
+        print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":
         print(geo_command(args))
     elif args.command == "run-task":

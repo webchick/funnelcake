@@ -89,6 +89,7 @@ Products use canonical IDs and aliases so extracted mentions can normalize
 - consistency: recommendation frequency by prompt and provider
 
 These are observational metrics. They should not be phrased as causal claims.
+Use `--json` when another tool needs the summary as structured data.
 
 ## Inspection
 
@@ -145,6 +146,7 @@ funnelcake geo compare baseline.json followup.json
 Comparison reports percentage-point changes for visibility, recommendation
 rate, first-choice rate, and share of recommendation. It intentionally says
 these are observational deltas rather than causal claims.
+Use `--json` when another tool needs the comparison as structured data.
 
 The older flat commands, such as `observe-answers`, `inspect-product`, and
 `compare-observations`, remain available as compatibility aliases.
