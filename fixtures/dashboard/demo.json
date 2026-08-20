@@ -16,7 +16,7 @@
       "task": "Create a project and deploy the example application.",
       "agent": "example-agent",
       "status": "failed",
-      "trace_id": "trace-1842",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e1842",
       "outcome_verified": true,
       "task_family": "deploy-app",
       "attributes": {
@@ -30,7 +30,7 @@
       "task": "Create a project from the API quickstart.",
       "agent": "example-agent",
       "status": "failed",
-      "trace_id": "trace-1901",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e1901",
       "outcome_verified": true,
       "task_family": "create-project",
       "attributes": {
@@ -41,8 +41,8 @@
   ],
   "spans": [
     {
-      "id": "span-1842-root",
-      "trace_id": "trace-1842",
+      "id": "00f067aa0ba91842",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e1842",
       "name": "trial FC-1842",
       "start_time": "2026-08-19T14:03:02Z",
       "end_time": "2026-08-19T14:03:45Z",
@@ -52,7 +52,8 @@
       "attributes": {
         "funnelcake.trial.id": "FC-1842",
         "funnelcake.stage": "setup",
-        "openinference.span.kind": "AGENT"
+        "openinference.span.kind": "AGENT",
+        "service.name": "funnelcake"
       },
       "events": [
         {
@@ -96,8 +97,8 @@
       "summary": "Authentication instructions were not located before the agent requested human intervention.",
       "evidence": [
         {
-          "trace_id": "trace-1842",
-          "span_id": "span-1842-root",
+          "trace_id": "4bf92f3577b34da6a3ce929d0e0e1842",
+          "span_id": "00f067aa0ba91842",
           "event_id": "event-1842-3",
           "source_url": "https://example.com/docs/api"
         }
@@ -110,7 +111,7 @@
       "summary": "Authentication instructions were not located from API onboarding.",
       "evidence": [
         {
-          "trace_id": "trace-1901",
+          "trace_id": "4bf92f3577b34da6a3ce929d0e0e1901",
           "source_url": "https://example.com/docs/api"
         }
       ]
@@ -132,8 +133,8 @@
       "suggested_intervention": "Link credential creation directly from API onboarding and use consistent terminology for authentication/access tokens.",
       "evidence": [
         {
-          "trace_id": "trace-1842",
-          "span_id": "span-1842-root",
+          "trace_id": "4bf92f3577b34da6a3ce929d0e0e1842",
+          "span_id": "00f067aa0ba91842",
           "event_id": "event-1842-3"
         }
       ]

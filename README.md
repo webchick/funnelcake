@@ -27,7 +27,7 @@ Uses DESSERT metrics:
 - `shared`: schemas, LLM adapters, and web helpers shared across packages.
 - `fixtures`: platform-specific sample inputs.
 - `artifacts`: local run output, ignored by git.
-- `specs`: design notes for benchmark grain size and data semantics.
+- `specs`: design notes for benchmark grain size, OpenTelemetry alignment, and data semantics.
 
 ## Local checks
 
@@ -35,4 +35,6 @@ Uses DESSERT metrics:
 python3 -m compileall apps packages shared
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli --help
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli dashboard-demo
+PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli capture-run fixtures/runs/setup-auth-docs.json
+PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli show-run artifacts/runs/FC-0001
 ```

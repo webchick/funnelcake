@@ -11,9 +11,11 @@ from .traces import (
     Span,
     SpanKind,
     StageMetric,
+    StateVerification,
     TraceEvent,
     TraceEventType,
     Trial,
+    TrialRun,
     TrialStatus,
 )
 
@@ -28,8 +30,10 @@ __all__ = [
     "Span",
     "SpanKind",
     "StageMetric",
+    "StateVerification",
     "TraceEvent",
     "TraceEventType",
     "Trial",
+    "TrialRun",
     "TrialStatus",
 ]

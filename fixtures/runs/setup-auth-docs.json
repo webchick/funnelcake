@@ -1,0 +1,104 @@
+{
+  "trial": {
+    "id": "FC-0001",
+    "stage": "setup",
+    "task": "Create an API token with the scopes required to deploy the example application.",
+    "agent": "manual-capture-example",
+    "status": "failed",
+    "trace_id": "4bf92f3577b34da6a3ce929d0e0e0001",
+    "outcome_verified": true,
+    "task_family": "setup/auth-discovery",
+    "attributes": {
+      "funnelcake.stage": "setup",
+      "funnelcake.task.family": "setup/auth-discovery"
+    }
+  },
+  "spans": [
+    {
+      "id": "00f067aa0ba90001",
+      "trace_id": "4bf92f3577b34da6a3ce929d0e0e0001",
+      "name": "Create API token for example deployment",
+      "start_time": "2026-08-19T17:10:00Z",
+      "end_time": "2026-08-19T17:11:12Z",
+      "kind": "internal",
+      "status_code": "ERROR",
+      "status_message": "Agent could not locate token creation instructions.",
+      "attributes": {
+        "funnelcake.trial.id": "FC-0001",
+        "funnelcake.stage": "setup",
+        "openinference.span.kind": "AGENT",
+        "service.name": "funnelcake"
+      },
+      "events": [
+        {
+          "id": "event-fc-0001-search",
+          "timestamp": "2026-08-19T17:10:04Z",
+          "name": "Search docs for API token creation",
+          "type": "search",
+          "attributes": {
+            "search.query": "create API token",
+            "funnelcake.actor": "agent"
+          }
+        },
+        {
+          "id": "event-fc-0001-nav-api",
+          "timestamp": "2026-08-19T17:10:15Z",
+          "name": "Open public API documentation",
+          "type": "navigation",
+          "attributes": {
+            "url.full": "https://example.com/docs/api",
+            "funnelcake.actor": "agent"
+          }
+        },
+        {
+          "id": "event-fc-0001-human",
+          "timestamp": "2026-08-19T17:11:10Z",
+          "name": "Request human intervention",
+          "type": "human_intervention",
+          "attributes": {
+            "funnelcake.failure.type": "auth_docs_not_found"
+          },
+          "body": "I need help finding where API tokens are created."
+        },
+        {
+          "id": "event-fc-0001-verify",
+          "timestamp": "2026-08-19T17:11:12Z",
+          "name": "Verify API token exists",
+          "type": "state_verification",
+          "attributes": {
+            "funnelcake.assertion": "api_token_exists",
+            "funnelcake.assertion.passed": false
+          }
+        }
+      ]
+    }
+  ],
+  "final_state": {
+    "expected": "API token exists with deployment scopes.",
+    "observed": "No API token was created.",
+    "passed": false,
+    "evidence": [
+      {
+        "trace_id": "4bf92f3577b34da6a3ce929d0e0e0001",
+        "span_id": "00f067aa0ba90001",
+        "event_id": "event-fc-0001-verify"
+      }
+    ]
+  },
+  "failures": [
+    {
+      "trial_id": "FC-0001",
+      "failure_type": "auth_docs_not_found",
+      "stage": "setup",
+      "summary": "The agent failed to locate token creation instructions and requested human intervention.",
+      "evidence": [
+        {
+          "trace_id": "4bf92f3577b34da6a3ce929d0e0e0001",
+          "span_id": "00f067aa0ba90001",
+          "event_id": "event-fc-0001-human",
+          "source_url": "https://example.com/docs/api"
+        }
+      ]
+    }
+  ]
+}

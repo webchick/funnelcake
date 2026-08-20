@@ -54,6 +54,14 @@ class TraceEventType(StrEnum):
 
 
 @dataclass(frozen=True)
+class StateVerification:
+    expected: str
+    observed: str
+    passed: bool
+    evidence: tuple["EvidenceRef", ...] = ()
+
+
+@dataclass(frozen=True)
 class EvidenceRef:
     trace_id: str
     span_id: str | None = None
@@ -98,6 +106,14 @@ class Trial:
     outcome_verified: bool
     task_family: str | None = None
     attributes: Attributes = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class TrialRun:
+    trial: Trial
+    spans: tuple[Span, ...]
+    final_state: StateVerification
+    failures: tuple["Failure", ...] = ()
 
 
 @dataclass(frozen=True)

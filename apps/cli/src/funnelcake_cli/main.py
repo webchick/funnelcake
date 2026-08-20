@@ -4,7 +4,13 @@ import argparse
 from pathlib import Path
 
 from funnelcake_benchmark_builder import BenchmarkSpec
-from funnelcake_discover_eval import DiscoveryEvalPlan
+from funnelcake_discover_eval import (
+    DiscoveryEvalPlan,
+    format_trial_run,
+    load_trial_run,
+    load_trial_run_artifact,
+    write_trial_run,
+)
 from funnelcake_intent_extraction import IntentProfile
 from funnelcake_platform_profile import PlatformProfile
 from funnelcake_reporting import ReportSpec, build_dashboard_overview, load_dashboard_fixture
@@ -13,13 +19,26 @@ from funnelcake_signal_mining import SignalSet
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="funnelcake")
-    parser.add_argument(
-        "command",
-        choices=["status", "dashboard-demo"],
-        nargs="?",
-        default="status",
-        help="Command to run.",
+    subparsers = parser.add_subparsers(dest="command")
+    subparsers.add_parser("status", help="Show scaffold status.")
+    subparsers.add_parser("dashboard-demo", help="Render the dashboard demo fixture.")
+
+    capture_run = subparsers.add_parser(
+        "capture-run",
+        help="Validate and write a captured trial run into artifacts.",
     )
+    capture_run.add_argument("path", help="Path to a trial run JSON capture.")
+    capture_run.add_argument(
+        "--artifacts-dir",
+        default="artifacts",
+        help="Directory where normalized run artifacts should be written.",
+    )
+
+    show_run = subparsers.add_parser(
+        "show-run",
+        help="Print a readable view of a captured trial run.",
+    )
+    show_run.add_argument("path", help="Path to a run artifact directory or run.json.")
     return parser
 
 
@@ -74,11 +93,35 @@ def dashboard_demo() -> str:
     return "\n".join(lines)
 
 
+def capture_run(path: str, artifacts_dir: str) -> str:
+    run = load_trial_run(path)
+    output_dir = write_trial_run(run, artifacts_dir)
+    return "\n".join(
+        [
+            f"captured_trial={run.trial.id}",
+            f"trace_id={run.trial.trace_id}",
+            f"spans={len(run.spans)}",
+            f"events={sum(len(span.events) for span in run.spans)}",
+            f"failures={len(run.failures)}",
+            f"final_state_passed={run.final_state.passed}",
+            f"output_dir={output_dir}",
+        ]
+    )
+
+
+def show_run(path: str) -> str:
+    return format_trial_run(load_trial_run_artifact(path))
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    if args.command == "status":
+    if args.command in (None, "status"):
         print(status())
     elif args.command == "dashboard-demo":
         print(dashboard_demo())
+    elif args.command == "capture-run":
+        print(capture_run(args.path, args.artifacts_dir))
+    elif args.command == "show-run":
+        print(show_run(args.path))
