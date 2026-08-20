@@ -14,6 +14,7 @@ from funnelcake_answer_observation import (
     format_observation_validation_report,
     format_product_detail,
     format_prompt_detail,
+    import_observation_set_sqlite,
     load_observation_set,
     summarize_observations,
     validate_observation_file,
@@ -190,6 +191,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print validation results as machine-readable JSON.",
     )
 
+    import_sqlite = subparsers.add_parser(
+        "import-observations-sqlite",
+        help="Import an AEO/GEO observation set into a SQLite database.",
+    )
+    import_sqlite.add_argument("path", help="Path to an answer observation JSON file.")
+    import_sqlite.add_argument(
+        "--db",
+        default="data/funnelcake.db",
+        help="SQLite database path.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -267,6 +279,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="Print validation results as machine-readable JSON.",
+    )
+
+    geo_import_sqlite = geo_subparsers.add_parser(
+        "import-sqlite",
+        help="Import an AEO/GEO observation set into a SQLite database.",
+    )
+    geo_import_sqlite.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_import_sqlite.add_argument(
+        "--db",
+        default="data/funnelcake.db",
+        help="SQLite database path.",
     )
 
     geo_compare = geo_subparsers.add_parser(
@@ -562,6 +585,21 @@ def validate_observations(path: str, json_output: bool = False) -> str:
     return format_observation_validation_report(report)
 
 
+def import_observations_sqlite(path: str, db_path: str) -> str:
+    observation_set = load_observation_set(path)
+    result = import_observation_set_sqlite(observation_set, db_path)
+    return "\n".join(
+        [
+            f"imported_observation_set={result['run_id']}",
+            f"db_path={result['db_path']}",
+            f"observations={result['observations']}",
+            f"citations={result['citations']}",
+            f"retrieved_sources={result['retrieved_sources']}",
+            f"product_mentions={result['product_mentions']}",
+        ]
+    )
+
+
 def print_observation_validation(path: str, json_output: bool) -> None:
     report = validate_observation_file(path)
     print(format_json(report) if json_output else format_observation_validation_report(report))
@@ -597,6 +635,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return normalize_observations(args.path, args.out)
     if args.geo_command == "validate":
         return validate_observations(args.path, args.json)
+    if args.geo_command == "import-sqlite":
+        return import_observations_sqlite(args.path, args.db)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -707,6 +747,8 @@ def main() -> None:
         print(normalize_observations(args.path, args.out))
     elif args.command == "validate-observations":
         print_observation_validation(args.path, args.json)
+    elif args.command == "import-observations-sqlite":
+        print(import_observations_sqlite(args.path, args.db))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":

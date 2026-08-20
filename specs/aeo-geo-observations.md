@@ -187,6 +187,20 @@ Use `--json` when another tool needs the comparison as structured data.
 The older flat commands, such as `observe-answers`, `inspect-product`, and
 `compare-observations`, remain available as compatibility aliases.
 
+## SQLite Import
+
+Use SQLite import when repeated runs need to be queried outside a single JSON
+file:
+
+```bash
+funnelcake geo import-sqlite observations.json --db data/funnelcake.db
+```
+
+The importer writes `runs`, `observations`, `citations`, `retrieved_sources`,
+and `product_mentions` tables. Raw provider request and response payloads stay
+attached to `observations` as JSON text so stored records can still be traced
+back to the original evidence.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

@@ -28,6 +28,7 @@ from .models import (
     Product,
     RetrievedSource,
 )
+from .sqlite_store import import_observation_set_sqlite
 
 __all__ = [
     "AnswerObservation",
@@ -51,6 +52,7 @@ __all__ = [
     "format_observation_validation_report",
     "format_product_detail",
     "format_prompt_detail",
+    "import_observation_set_sqlite",
     "load_observation_set",
     "summarize_observations",
     "validate_observation_file",

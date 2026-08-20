@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -103,6 +104,25 @@ class GeoCliTest(unittest.TestCase):
         self.assertNotIn("subjectEntity", normalized)
         self.assertEqual(normalized["observations"][0]["prompt_id"], "cms-enterprise-raw-001")
         self.assertNotIn("promptId", normalized["observations"][0])
+
+    def test_geo_import_sqlite_writes_database(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "funnelcake.db"
+            result = self.run_cli(
+                "geo",
+                "import-sqlite",
+                "fixtures/geo/drupal-raw-collected.json",
+                "--db",
+                str(db_path),
+            )
+            with sqlite3.connect(db_path) as connection:
+                observation_count = connection.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
+                mention_count = connection.execute("SELECT COUNT(*) FROM product_mentions").fetchone()[0]
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("imported_observation_set=drupal-raw-collected-sample", result.stdout)
+        self.assertEqual(observation_count, 1)
+        self.assertEqual(mention_count, 2)
 
 
 if __name__ == "__main__":

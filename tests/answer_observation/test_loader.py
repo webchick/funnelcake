@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
 from funnelcake_answer_observation import (
     load_observation_set,
+    import_observation_set_sqlite,
     validate_observation_file,
     write_observation_set,
 )
@@ -120,6 +122,36 @@ class ObservationLoaderTest(unittest.TestCase):
         self.assertEqual(report.observation_count, 0)
         self.assertEqual(len(report.errors), 1)
         self.assertIn("No such file or directory", report.errors[0])
+
+    def test_imports_observation_set_to_sqlite(self) -> None:
+        observation_set = load_observation_set(REPO_ROOT / "fixtures/geo/drupal-raw-collected.json")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = Path(temp_dir) / "funnelcake.db"
+            result = import_observation_set_sqlite(observation_set, db_path)
+            with sqlite3.connect(db_path) as connection:
+                run_count = connection.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+                observation_count = connection.execute("SELECT COUNT(*) FROM observations").fetchone()[0]
+                citation_count = connection.execute("SELECT COUNT(*) FROM citations").fetchone()[0]
+                retrieved_count = connection.execute("SELECT COUNT(*) FROM retrieved_sources").fetchone()[0]
+                mention_count = connection.execute("SELECT COUNT(*) FROM product_mentions").fetchone()[0]
+                first_mention = connection.execute(
+                    """
+                    SELECT product_id, recommended, recommendation_position
+                    FROM product_mentions
+                    WHERE observation_id = 'raw-obs-001'
+                    ORDER BY id
+                    LIMIT 1
+                    """
+                ).fetchone()
+
+        self.assertEqual(result["run_id"], "drupal-raw-collected-sample")
+        self.assertEqual(run_count, 1)
+        self.assertEqual(observation_count, 1)
+        self.assertEqual(citation_count, 1)
+        self.assertEqual(retrieved_count, 2)
+        self.assertEqual(mention_count, 2)
+        self.assertEqual(first_mention, ("drupal", 1, 1))
 
 
 if __name__ == "__main__":
