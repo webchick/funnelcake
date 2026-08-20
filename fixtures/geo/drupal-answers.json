@@ -1,0 +1,177 @@
+{
+  "id": "drupal-cms-selection-sample",
+  "subject_entity": "Drupal",
+  "description": "Sample AEO/GEO answer observations for CMS selection prompts.",
+  "observations": [
+    {
+      "id": "obs-001",
+      "prompt_id": "cms-enterprise-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "engine": "chat",
+      "surface": "web",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "language": "en",
+      "timestamp": "2026-08-20T03:30:00Z",
+      "run_number": 1,
+      "raw_answer": "Drupal is a strong fit for large universities because it supports complex permissions, multisite governance, and structured content. WordPress can also work for smaller departmental needs.",
+      "mentions": [
+        {
+          "entity": "Drupal",
+          "role": "recommended",
+          "rank": 1
+        },
+        {
+          "entity": "WordPress",
+          "role": "alternative",
+          "rank": 2
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/case-study/higher-education",
+          "title": "Drupal higher education case studies",
+          "entity": "Drupal"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://www.drupal.org/",
+          "title": "Drupal",
+          "rank": 1,
+          "entity": "Drupal"
+        },
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "rank": 2,
+          "entity": "WordPress"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal supports complex permissions and structured content.",
+          "support": "cited",
+          "source_urls": [
+            "https://www.drupal.org/case-study/higher-education"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obs-002",
+      "prompt_id": "cms-marketing-001",
+      "prompt": "What CMS is easiest for a small marketing site?",
+      "engine": "chat",
+      "surface": "web",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "language": "en",
+      "timestamp": "2026-08-20T03:31:00Z",
+      "run_number": 1,
+      "raw_answer": "For a small marketing site, WordPress or Webflow are usually easier choices. Drupal is powerful but may be more than this scenario needs.",
+      "mentions": [
+        {
+          "entity": "WordPress",
+          "role": "recommended",
+          "rank": 1
+        },
+        {
+          "entity": "Webflow",
+          "role": "recommended",
+          "rank": 2
+        },
+        {
+          "entity": "Drupal",
+          "role": "mentioned",
+          "rank": 3
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "entity": "WordPress"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "rank": 1,
+          "entity": "WordPress"
+        },
+        {
+          "url": "https://webflow.com/",
+          "title": "Webflow",
+          "rank": 2,
+          "entity": "Webflow"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal may be more than a small marketing site needs.",
+          "support": "observed"
+        }
+      ]
+    },
+    {
+      "id": "obs-003",
+      "prompt_id": "cms-government-001",
+      "prompt": "Which CMS should a government agency shortlist for accessibility and governance?",
+      "engine": "chat",
+      "surface": "web",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "language": "en",
+      "timestamp": "2026-08-20T03:32:00Z",
+      "run_number": 1,
+      "raw_answer": "Drupal should be on the shortlist for government sites with governance, accessibility, and content modeling requirements. WordPress is also common, but Drupal is often chosen for complex public-sector platforms.",
+      "mentions": [
+        {
+          "entity": "Drupal",
+          "role": "recommended",
+          "rank": 1
+        },
+        {
+          "entity": "WordPress",
+          "role": "alternative",
+          "rank": 2
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/industries/government",
+          "title": "Drupal for government",
+          "entity": "Drupal"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://www.drupal.org/industries/government",
+          "title": "Drupal for government",
+          "rank": 1,
+          "entity": "Drupal"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal should be shortlisted for governance and content modeling requirements.",
+          "support": "cited",
+          "source_urls": [
+            "https://www.drupal.org/industries/government"
+          ]
+        }
+      ]
+    }
+  ]
+}

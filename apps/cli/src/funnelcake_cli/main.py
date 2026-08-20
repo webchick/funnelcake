@@ -3,6 +3,11 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from funnelcake_answer_observation import (
+    format_observation_summary,
+    load_observation_set,
+    summarize_observations,
+)
 from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_task_spec
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
@@ -112,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate and print a benchmark task spec.",
     )
     validate_task.add_argument("path", help="Path to a benchmark task JSON spec.")
+
+    observe_answers = subparsers.add_parser(
+        "observe-answers",
+        help="Summarize AEO/GEO answer observations from a JSON observation set.",
+    )
+    observe_answers.add_argument("path", help="Path to an answer observation JSON file.")
 
     run_task = subparsers.add_parser(
         "run-task",
@@ -347,6 +358,11 @@ def validate_task(path: str) -> str:
     return format_task_spec(load_task_spec(path))
 
 
+def observe_answers(path: str) -> str:
+    observation_set = load_observation_set(path)
+    return format_observation_summary(summarize_observations(observation_set))
+
+
 def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     run, output_dir = run_task_spec(path, artifacts_dir=artifacts_dir, agent=agent)
     return "\n".join(
@@ -434,6 +450,8 @@ def main() -> None:
         print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
     elif args.command == "validate-task":
         print(validate_task(args.path))
+    elif args.command == "observe-answers":
+        print(observe_answers(args.path))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":
