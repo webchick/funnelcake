@@ -17,6 +17,7 @@ from funnelcake_answer_observation import (
     format_prompt_detail,
     import_observation_set_sqlite,
     load_observation_set,
+    run_fixture_provider,
     summarize_observations,
     validate_observation_file,
     write_observation_set,
@@ -214,6 +215,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path for the enriched observation-set JSON output.",
     )
 
+    run_fixture = subparsers.add_parser(
+        "run-observation-fixture",
+        help="Run a fixture answer provider and write raw AEO/GEO observations.",
+    )
+    run_fixture.add_argument("path", help="Path to a fixture provider JSON config.")
+    run_fixture.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -313,6 +325,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         required=True,
         help="Path for the enriched observation-set JSON output.",
+    )
+
+    geo_run_fixture = geo_subparsers.add_parser(
+        "run-fixture",
+        help="Run a fixture answer provider and write raw AEO/GEO observations.",
+    )
+    geo_run_fixture.add_argument("path", help="Path to a fixture provider JSON config.")
+    geo_run_fixture.add_argument(
+        "--out",
+        required=True,
+        help="Path for the raw observation-set JSON output.",
     )
 
     geo_compare = geo_subparsers.add_parser(
@@ -638,6 +661,19 @@ def extract_observation_products(path: str, output_path: str) -> str:
     )
 
 
+def run_observation_fixture(path: str, output_path: str) -> str:
+    observation_set = run_fixture_provider(path)
+    written_path = write_observation_set(observation_set, output_path)
+    return "\n".join(
+        [
+            f"run_observation_set={observation_set.id}",
+            f"provider={observation_set.attributes.get('provider', '')}",
+            f"observations={len(observation_set.observations)}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def print_observation_validation(path: str, json_output: bool) -> None:
     report = validate_observation_file(path)
     print(format_json(report) if json_output else format_observation_validation_report(report))
@@ -677,6 +713,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return import_observations_sqlite(args.path, args.db)
     if args.geo_command == "extract-products":
         return extract_observation_products(args.path, args.out)
+    if args.geo_command == "run-fixture":
+        return run_observation_fixture(args.path, args.out)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -791,6 +829,8 @@ def main() -> None:
         print(import_observations_sqlite(args.path, args.db))
     elif args.command == "extract-observation-products":
         print(extract_observation_products(args.path, args.out))
+    elif args.command == "run-observation-fixture":
+        print(run_observation_fixture(args.path, args.out))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":

@@ -10,6 +10,7 @@ from funnelcake_answer_observation import (
     extract_product_mentions,
     load_observation_set,
     import_observation_set_sqlite,
+    run_fixture_provider,
     validate_observation_file,
     write_observation_set,
 )
@@ -165,6 +166,19 @@ class ObservationLoaderTest(unittest.TestCase):
         self.assertEqual(mentions[1].role, "mentioned")
         self.assertEqual(mentions[1].display_name, "WordPress")
         self.assertEqual(mentions[0].attributes["extracted_by"], "deterministic_product_alias")
+
+    def test_runs_fixture_provider_to_raw_observations(self) -> None:
+        observation_set = run_fixture_provider(REPO_ROOT / "fixtures/geo/drupal-fixture-provider.json")
+
+        self.assertEqual(observation_set.id, "drupal-fixture-provider-run")
+        self.assertEqual(len(observation_set.prompts), 2)
+        self.assertEqual(len(observation_set.products), 3)
+        self.assertEqual(len(observation_set.observations), 2)
+        self.assertEqual(observation_set.observations[0].provider, "fixture")
+        self.assertEqual(observation_set.observations[0].model, "fixture-answer-engine")
+        self.assertEqual(observation_set.observations[0].raw_request["prompt_id"], "cms-enterprise-fixture-001")
+        self.assertEqual(observation_set.observations[0].raw_response["answer_id"], "fixture-obs-001")
+        self.assertEqual(observation_set.observations[0].mentions, ())
 
 
 if __name__ == "__main__":

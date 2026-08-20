@@ -217,6 +217,22 @@ contains recommendation language. Provider execution and product extraction
 remain separate steps so extracted structure can be improved without rerunning
 the original probes.
 
+## Fixture Provider Runs
+
+Use the fixture provider to exercise the v0 execution boundary without API
+keys:
+
+```bash
+funnelcake geo run-fixture fixture-provider.json --out raw-observations.json
+funnelcake geo extract-products raw-observations.json --out extracted-observations.json
+funnelcake geo summary extracted-observations.json
+```
+
+The fixture provider accepts prompts, products, and predefined answers, then
+emits raw observations with provider/model/run metadata and raw request/response
+payloads. Live answer-engine adapters should produce the same observation-set
+shape.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

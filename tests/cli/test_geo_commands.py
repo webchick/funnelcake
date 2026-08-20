@@ -148,6 +148,39 @@ class GeoCliTest(unittest.TestCase):
         self.assertEqual(summary["subject_visibility"]["mention_count"], 1)
         self.assertEqual(summary["subject_visibility"]["recommended_count"], 1)
 
+    def test_geo_run_fixture_feeds_extract_and_summary(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            raw_path = Path(temp_dir) / "raw.json"
+            extracted_path = Path(temp_dir) / "extracted.json"
+            run_result = self.run_cli(
+                "geo",
+                "run-fixture",
+                "fixtures/geo/drupal-fixture-provider.json",
+                "--out",
+                str(raw_path),
+            )
+            extract_result = self.run_cli(
+                "geo",
+                "extract-products",
+                str(raw_path),
+                "--out",
+                str(extracted_path),
+            )
+            summary_result = self.run_cli(
+                "geo",
+                "summary",
+                str(extracted_path),
+                "--json",
+            )
+            summary = json.loads(summary_result.stdout)
+
+        self.assertEqual(run_result.returncode, 0, run_result.stderr)
+        self.assertEqual(extract_result.returncode, 0, extract_result.stderr)
+        self.assertEqual(summary_result.returncode, 0, summary_result.stderr)
+        self.assertIn("run_observation_set=drupal-fixture-provider-run", run_result.stdout)
+        self.assertEqual(summary["response_count"], 2)
+        self.assertEqual(summary["subject_visibility"]["mention_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()

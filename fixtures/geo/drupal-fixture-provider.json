@@ -1,0 +1,90 @@
+{
+  "id": "drupal-fixture-provider-run",
+  "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
+  "description": "Fixture provider config for exercising the v0 run boundary.",
+  "provider": "fixture",
+  "engine": "fixture",
+  "surface": "fixture",
+  "model": "fixture-answer-engine",
+  "model_version": "2026-08",
+  "search_enabled": false,
+  "country": "US",
+  "run_number": 1,
+  "repetition": 1,
+  "prompts": [
+    {
+      "id": "cms-enterprise-fixture-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ]
+    },
+    {
+      "id": "cms-marketing-fixture-001",
+      "prompt": "What CMS is easiest for a small marketing site?",
+      "intent": "solution_discovery",
+      "persona": "marketer",
+      "task": "launch_marketing_site",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "marketing-site"
+      ]
+    }
+  ],
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS"
+      ]
+    },
+    {
+      "id": "webflow",
+      "name": "Webflow",
+      "aliases": []
+    }
+  ],
+  "answers": [
+    {
+      "id": "fixture-obs-001",
+      "prompt_id": "cms-enterprise-fixture-001",
+      "timestamp": "2026-08-20T04:40:00Z",
+      "answer": "Drupal is a strong fit for a university multisite program with governance and structured content. WordPress may work for simpler department sites.",
+      "raw_response": {
+        "fixture": true,
+        "answer_id": "fixture-obs-001"
+      }
+    },
+    {
+      "id": "fixture-obs-002",
+      "prompt_id": "cms-marketing-fixture-001",
+      "timestamp": "2026-08-20T04:41:00Z",
+      "answer": "For a small marketing site, WordPress and Webflow are usually easier choices. Drupal may be more than the team needs.",
+      "raw_response": {
+        "fixture": true,
+        "answer_id": "fixture-obs-002"
+      }
+    }
+  ]
+}
