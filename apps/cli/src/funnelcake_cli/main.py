@@ -22,6 +22,7 @@ from funnelcake_answer_observation import (
     run_gemini_provider,
     run_openai_provider,
     run_perplexity_provider,
+    run_provider_corpus,
     summarize_observations,
     validate_observation_file,
     write_observation_set,
@@ -362,6 +363,38 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         required=True,
         help="Path for the enriched observation-set JSON output.",
+    )
+
+    geo_run = geo_subparsers.add_parser(
+        "run",
+        help="Run a prompt corpus across one or more AEO/GEO providers.",
+    )
+    geo_run.add_argument("path", help="Path to a YAML or JSON prompt corpus.")
+    geo_run.add_argument(
+        "--providers",
+        default="fixture",
+        help="Comma-separated providers to run: fixture, openai, gemini, perplexity.",
+    )
+    geo_run.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="Number of repetitions for each provider/prompt pair.",
+    )
+    geo_run.add_argument(
+        "--out",
+        help="Path for the observation-set JSON output. Defaults to artifacts/geo/<run-id>.json.",
+    )
+
+    geo_report = geo_subparsers.add_parser(
+        "report",
+        help="Render a readable AEO/GEO report from an observation set.",
+    )
+    geo_report.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_report.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the report as machine-readable JSON.",
     )
 
     geo_run_fixture = geo_subparsers.add_parser(
@@ -731,6 +764,27 @@ def extract_observation_products(path: str, output_path: str) -> str:
     )
 
 
+def run_observation_corpus(path: str, providers: str, repeat: int, output_path: str | None) -> str:
+    provider_names = tuple(provider.strip() for provider in providers.split(",") if provider.strip())
+    observation_set = run_provider_corpus(path, provider_names, repeat=repeat)
+    extracted = extract_product_mentions(observation_set)
+    final_output_path = output_path or str(Path("artifacts") / "geo" / f"{extracted.id}.json")
+    written_path = write_observation_set(extracted, final_output_path)
+    success_count = sum(1 for observation in extracted.observations if observation.success)
+    failure_count = len(extracted.observations) - success_count
+    return "\n".join(
+        [
+            f"run_observation_set={extracted.id}",
+            f"providers={','.join(provider_names)}",
+            f"repeat={repeat}",
+            f"observations={len(extracted.observations)}",
+            f"succeeded={success_count}",
+            f"failed={failure_count}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def run_observation_fixture(path: str, output_path: str) -> str:
     observation_set = run_fixture_provider(path)
     written_path = write_observation_set(observation_set, output_path)
@@ -806,6 +860,8 @@ def compare_observations(
 def geo_command(args: argparse.Namespace) -> str:
     if args.geo_command == "summary":
         return observe_answers(args.path, args.json)
+    if args.geo_command == "report":
+        return observe_answers(args.path, args.json)
     if args.geo_command == "inspect-observation":
         return inspect_observation(args.path, args.observation_id)
     if args.geo_command == "inspect-product":
@@ -822,6 +878,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return import_observations_sqlite(args.path, args.db)
     if args.geo_command == "extract-products":
         return extract_observation_products(args.path, args.out)
+    if args.geo_command == "run":
+        return run_observation_corpus(args.path, args.providers, args.repeat, args.out)
     if args.geo_command == "run-fixture":
         return run_observation_fixture(args.path, args.out)
     if args.geo_command == "run-openai":

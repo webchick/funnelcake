@@ -52,6 +52,9 @@ PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-prompt fixtures/
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo inspect-domain fixtures/geo/drupal-answers.json drupal.org
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/drupal-raw-collected.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/drupal-raw-collected.json --json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run fixtures/geo/drupal-prompts.yaml --providers fixture --repeat 2 --out artifacts/geo/drupal-fixture-corpus-run.json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo report artifacts/geo/drupal-fixture-corpus-run.json
+OPENAI_API_KEY=... GEMINI_API_KEY=... PERPLEXITY_API_KEY=... PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run fixtures/geo/drupal-prompts.yaml --providers openai,gemini,perplexity --repeat 5 --out artifacts/geo/drupal-real-run.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-fixture fixtures/geo/drupal-fixture-provider.json --out artifacts/geo/drupal-fixture-run.json
 OPENAI_API_KEY=... PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-openai fixtures/geo/drupal-openai-provider.json --out artifacts/geo/drupal-openai-run.json
 GEMINI_API_KEY=... PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo run-gemini fixtures/geo/drupal-gemini-provider.json --out artifacts/geo/drupal-gemini-run.json

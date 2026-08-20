@@ -190,6 +190,36 @@ class GeoCliTest(unittest.TestCase):
         self.assertEqual(summary["response_count"], 2)
         self.assertEqual(summary["subject_visibility"]["mention_count"], 2)
 
+    def test_geo_run_yaml_corpus_feeds_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "run.json"
+            run_result = self.run_cli(
+                "geo",
+                "run",
+                "fixtures/geo/drupal-prompts.yaml",
+                "--providers",
+                "fixture",
+                "--repeat",
+                "2",
+                "--out",
+                str(output_path),
+            )
+            report_result = self.run_cli(
+                "geo",
+                "report",
+                str(output_path),
+                "--json",
+            )
+            report = json.loads(report_result.stdout)
+
+        self.assertEqual(run_result.returncode, 0, run_result.stderr)
+        self.assertEqual(report_result.returncode, 0, report_result.stderr)
+        self.assertIn("run_observation_set=drupal-fixture-corpus-run", run_result.stdout)
+        self.assertIn("observations=2", run_result.stdout)
+        self.assertIn("failed=0", run_result.stdout)
+        self.assertEqual(report["response_count"], 2)
+        self.assertEqual(report["subject_visibility"]["recommended_count"], 2)
+
     def test_geo_run_openai_requires_api_key(self) -> None:
         result = self.run_cli(
             "geo",

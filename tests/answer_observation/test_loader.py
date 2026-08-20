@@ -15,6 +15,7 @@ from funnelcake_answer_observation import (
     run_gemini_provider,
     run_openai_provider,
     run_perplexity_provider,
+    run_provider_corpus,
     validate_observation_file,
     write_observation_set,
 )
@@ -183,6 +184,34 @@ class ObservationLoaderTest(unittest.TestCase):
         self.assertEqual(observation_set.observations[0].raw_request["prompt_id"], "cms-enterprise-fixture-001")
         self.assertEqual(observation_set.observations[0].raw_response["answer_id"], "fixture-obs-001")
         self.assertEqual(observation_set.observations[0].mentions, ())
+
+    def test_runs_yaml_provider_corpus_with_fixture_repetitions(self) -> None:
+        observation_set = run_provider_corpus(
+            REPO_ROOT / "fixtures/geo/drupal-prompts.yaml",
+            ("fixture",),
+            repeat=2,
+        )
+
+        self.assertEqual(observation_set.id, "drupal-fixture-corpus-run")
+        self.assertEqual(len(observation_set.observations), 2)
+        self.assertEqual(observation_set.observations[0].provider, "fixture")
+        self.assertEqual(observation_set.observations[0].repetition, 1)
+        self.assertEqual(observation_set.observations[1].repetition, 2)
+        self.assertIn("Drupal is a strong fit", observation_set.observations[0].raw_answer)
+
+    def test_provider_corpus_records_provider_failures(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            observation_set = run_provider_corpus(
+                REPO_ROOT / "fixtures/geo/drupal-prompts.yaml",
+                ("fixture", "openai"),
+                repeat=1,
+            )
+
+        self.assertEqual(len(observation_set.observations), 2)
+        self.assertTrue(observation_set.observations[0].success)
+        self.assertFalse(observation_set.observations[1].success)
+        self.assertEqual(observation_set.observations[1].failure_type, "provider_error")
+        self.assertIn("OPENAI_API_KEY is required", observation_set.observations[1].error_message or "")
 
     def test_runs_openai_provider_with_mocked_response(self) -> None:
         response_body = {

@@ -5,10 +5,72 @@ import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
 from urllib import request
+from urllib.parse import quote
 
 from .models import AnswerObservation, Citation, ObservationSet, ProbePrompt, Product, RetrievedSource
+
+
+PROVIDER_DEFAULT_MODELS = {
+    "fixture": "fixture-answer-engine",
+    "openai": "gpt-5.6",
+    "gemini": "gemini-3.5-flash",
+    "perplexity": "sonar-pro",
+}
+
+
+def run_provider_corpus(
+    path: str | Path,
+    providers: tuple[str, ...],
+    repeat: int = 1,
+) -> ObservationSet:
+    raw = _load_config(path)
+    if repeat < 1:
+        raise ValueError("repeat must be at least 1")
+    if not providers:
+        raise ValueError("at least one provider is required")
+
+    prompts = tuple(_prompt(item) for item in raw.get("prompts", []))
+    products = tuple(_product(item) for item in raw.get("products", []))
+    if not prompts:
+        raise ValueError("provider corpus requires at least one prompt")
+
+    run_id = raw.get("id", f"geo-run-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}")
+    observations = []
+    observation_index = 0
+    for repetition in range(1, repeat + 1):
+        for provider in providers:
+            normalized_provider = provider.strip().lower()
+            if not normalized_provider:
+                continue
+            for prompt in prompts:
+                observation_index += 1
+                observations.append(
+                    _run_provider_observation(
+                        raw=raw,
+                        run_id=run_id,
+                        observation_index=observation_index,
+                        prompt=prompt,
+                        provider=normalized_provider,
+                        repetition=repetition,
+                    )
+                )
+
+    return ObservationSet(
+        id=run_id,
+        subject_entity=_field(raw, "subject_entity", "subjectEntity"),
+        subject_product_id=_field(raw, "subject_product_id", "subjectProductId"),
+        description=raw.get("description"),
+        prompts=prompts,
+        products=products,
+        observations=tuple(observations),
+        attributes={
+            "provider_config": str(path),
+            "providers": tuple(providers),
+            "repeat": repeat,
+            **raw.get("attributes", {}),
+        },
+    )
 
 
 def run_fixture_provider(path: str | Path) -> ObservationSet:
@@ -228,6 +290,103 @@ def run_gemini_provider(path: str | Path, api_key: str | None = None) -> Observa
     )
 
 
+def _run_provider_observation(
+    raw: dict[str, Any],
+    run_id: str,
+    observation_index: int,
+    prompt: ProbePrompt,
+    provider: str,
+    repetition: int,
+) -> AnswerObservation:
+    model = _provider_model(raw, provider)
+    observed_at = _current_timestamp()
+    raw_request = {
+        "prompt_id": prompt.id,
+        "prompt": prompt.prompt,
+        "provider": provider,
+        "model": model,
+        "search_enabled": _provider_search_enabled(raw, provider),
+        "repetition": repetition,
+    }
+    try:
+        response = _provider_response(raw, provider, model, prompt)
+        return _successful_provider_observation(
+            raw=raw,
+            run_id=run_id,
+            observation_index=observation_index,
+            prompt=prompt,
+            provider=provider,
+            model=model,
+            repetition=repetition,
+            observed_at=observed_at,
+            raw_request=raw_request,
+            response=response,
+        )
+    except Exception as exc:
+        return AnswerObservation(
+            id=f"{run_id}-obs-{observation_index:03d}",
+            run_id=run_id,
+            prompt_id=prompt.id,
+            prompt=prompt.prompt,
+            raw_answer="",
+            engine=_provider_engine(provider),
+            surface=raw.get("surface", "api"),
+            provider=provider,
+            model=model,
+            search_enabled=_provider_search_enabled(raw, provider),
+            country=raw.get("country"),
+            region=prompt.region,
+            language=prompt.language,
+            timestamp=observed_at,
+            run_number=raw.get("run_number", 1),
+            repetition=repetition,
+            success=False,
+            failure_type="provider_error",
+            error_message=str(exc),
+            raw_request=raw_request,
+            raw_response={},
+        )
+
+
+def _successful_provider_observation(
+    raw: dict[str, Any],
+    run_id: str,
+    observation_index: int,
+    prompt: ProbePrompt,
+    provider: str,
+    model: str,
+    repetition: int,
+    observed_at: str,
+    raw_request: dict[str, Any],
+    response: dict[str, Any],
+) -> AnswerObservation:
+    raw_answer = _provider_text(provider, response)
+    return AnswerObservation(
+        id=f"{run_id}-obs-{observation_index:03d}",
+        run_id=run_id,
+        prompt_id=prompt.id,
+        prompt=prompt.prompt,
+        raw_answer=raw_answer,
+        engine=_provider_engine(provider),
+        surface=raw.get("surface", "api"),
+        provider=provider,
+        model=response.get("model", model),
+        model_version=raw.get("model_version"),
+        search_enabled=_provider_search_enabled(raw, provider),
+        country=raw.get("country"),
+        region=prompt.region,
+        language=prompt.language,
+        timestamp=_provider_timestamp(provider, response) or observed_at,
+        run_number=raw.get("run_number", 1),
+        repetition=repetition,
+        raw_request=raw_request,
+        raw_response=response,
+        citations=_provider_citations(provider, response),
+        retrieved_sources=_provider_retrieved_sources(provider, response),
+        attributes=_provider_attributes(provider, response),
+    )
+
+
 def run_perplexity_provider(path: str | Path, api_key: str | None = None) -> ObservationSet:
     with Path(path).open(encoding="utf-8") as config_file:
         raw = json.load(config_file)
@@ -296,6 +455,152 @@ def run_perplexity_provider(path: str | Path, api_key: str | None = None) -> Obs
             **raw.get("attributes", {}),
         },
     )
+
+
+def _load_config(path: str | Path) -> dict[str, Any]:
+    config_path = Path(path)
+    with config_path.open(encoding="utf-8") as config_file:
+        if config_path.suffix.lower() in {".yaml", ".yml"}:
+            try:
+                import yaml
+            except ModuleNotFoundError:
+                loaded = json.load(config_file)
+            else:
+                loaded = yaml.safe_load(config_file)
+        else:
+            loaded = json.load(config_file)
+    if not isinstance(loaded, dict):
+        raise ValueError(f"config must be a mapping: {path}")
+    return loaded
+
+
+def _provider_config(raw: dict[str, Any], provider: str) -> dict[str, Any]:
+    providers = raw.get("providers", {})
+    if isinstance(providers, dict):
+        config = providers.get(provider, {})
+        return config if isinstance(config, dict) else {}
+    return {}
+
+
+def _provider_model(raw: dict[str, Any], provider: str) -> str:
+    config = _provider_config(raw, provider)
+    models = raw.get("models", {})
+    if isinstance(models, dict) and isinstance(models.get(provider), str):
+        return models[provider]
+    if isinstance(config.get("model"), str):
+        return config["model"]
+    if isinstance(raw.get("model"), str):
+        return raw["model"]
+    if provider in PROVIDER_DEFAULT_MODELS:
+        return PROVIDER_DEFAULT_MODELS[provider]
+    raise ValueError(f"unknown provider: {provider}")
+
+
+def _provider_search_enabled(raw: dict[str, Any], provider: str) -> bool:
+    config = _provider_config(raw, provider)
+    if "search_enabled" in config:
+        return bool(config["search_enabled"])
+    return bool(raw.get("search_enabled", provider in {"gemini", "perplexity"}))
+
+
+def _provider_response(
+    raw: dict[str, Any],
+    provider: str,
+    model: str,
+    prompt: ProbePrompt,
+) -> dict[str, Any]:
+    if provider == "fixture":
+        return _fixture_response(raw, prompt, model)
+    if provider == "openai":
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            raise RuntimeError("OPENAI_API_KEY is required for the OpenAI provider")
+        return _openai_response(
+            api_key=key,
+            model=model,
+            prompt=prompt.prompt,
+            search_enabled=_provider_search_enabled(raw, provider),
+        )
+    if provider == "gemini":
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise RuntimeError("GEMINI_API_KEY is required for the Gemini provider")
+        return _gemini_response(
+            api_key=key,
+            model=model,
+            prompt=prompt.prompt,
+            search_enabled=_provider_search_enabled(raw, provider),
+        )
+    if provider == "perplexity":
+        key = os.environ.get("PERPLEXITY_API_KEY")
+        if not key:
+            raise RuntimeError("PERPLEXITY_API_KEY is required for the Perplexity provider")
+        return _perplexity_response(api_key=key, model=model, prompt=prompt.prompt)
+    raise ValueError(f"unknown provider: {provider}")
+
+
+def _fixture_response(raw: dict[str, Any], prompt: ProbePrompt, model: str) -> dict[str, Any]:
+    answer = None
+    for item in raw.get("answers", []):
+        if _field(item, "prompt_id", "promptId", default=None) == prompt.id:
+            answer = _field(item, "raw_answer", "answer", "response", default=None)
+            break
+    if answer is None:
+        answer = prompt.attributes.get("fixture_answer") if isinstance(prompt.attributes, dict) else None
+    if answer is None:
+        answer = f"Fixture answer for {prompt.id}."
+    return {
+        "model": model,
+        "created_at": _current_timestamp(),
+        "output_text": answer,
+        "output": [],
+        "fixture": True,
+    }
+
+
+def _provider_engine(provider: str) -> str:
+    return {
+        "fixture": "fixture",
+        "openai": "responses",
+        "gemini": "generateContent",
+        "perplexity": "sonar",
+    }.get(provider, provider)
+
+
+def _provider_text(provider: str, response: dict[str, Any]) -> str:
+    if provider == "gemini":
+        return _gemini_text(response)
+    if provider == "perplexity":
+        return _chat_completion_text(response)
+    return _response_text(response)
+
+
+def _provider_timestamp(provider: str, response: dict[str, Any]) -> str | None:
+    if provider == "perplexity":
+        return _chat_completion_timestamp(response)
+    return _response_timestamp(response)
+
+
+def _provider_citations(provider: str, response: dict[str, Any]) -> tuple[Citation, ...]:
+    if provider == "gemini":
+        return _gemini_citations(response)
+    if provider == "perplexity":
+        return _perplexity_citations(response)
+    return _response_citations(response)
+
+
+def _provider_retrieved_sources(provider: str, response: dict[str, Any]) -> tuple[RetrievedSource, ...]:
+    if provider == "gemini":
+        return _gemini_retrieved_sources(response)
+    if provider == "perplexity":
+        return _perplexity_retrieved_sources(response)
+    return ()
+
+
+def _provider_attributes(provider: str, response: dict[str, Any]) -> dict[str, Any]:
+    if provider == "gemini":
+        return {"web_search_queries": _gemini_web_search_queries(response)}
+    return {}
 
 
 def _openai_response(

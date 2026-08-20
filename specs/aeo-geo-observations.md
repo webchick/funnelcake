@@ -233,6 +233,22 @@ emits raw observations with provider/model/run metadata and raw request/response
 payloads. Live answer-engine adapters should produce the same observation-set
 shape.
 
+## Combined Provider Runs
+
+Use a YAML or JSON prompt corpus to run the same prompts across configured
+providers and repetitions:
+
+```bash
+funnelcake geo run prompts.yaml --providers openai,gemini,perplexity --repeat 5 --out raw-observations.json
+funnelcake geo report raw-observations.json
+```
+
+Each provider/prompt/repetition produces one observation. Provider errors are
+recorded as failed observations with `failure_type=provider_error` and
+`error_message`, so one missing or failing provider does not destroy the whole
+run. The command preserves raw provider payloads, then runs deterministic product
+mention extraction before writing the observation set.
+
 ## OpenAI Provider Runs
 
 Use the OpenAI provider to collect real answer observations through the
@@ -277,7 +293,6 @@ retrieved sources.
 
 ## Deferred
 
-The broader `geo.md` plan also sketches provider adapters, SQLite persistence,
-provider failure handling, report/inspect subcommands, run comparison, and
-manual hypotheses. Those are compatible with the current schema, but are
-deferred until the JSON artifact shape and metric semantics settle.
+Manual hypothesis tracking remains deferred. The v0 CLI now covers local
+fixtures, OpenAI, Gemini, Perplexity, SQLite import, report/inspect subcommands,
+provider failure records, and run comparison.

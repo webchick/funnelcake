@@ -1,0 +1,50 @@
+{
+  "id": "drupal-fixture-corpus-run",
+  "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
+  "description": "YAML prompt corpus for local AEO/GEO provider runs.",
+  "surface": "api",
+  "country": "US",
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS"
+      ]
+    }
+  ],
+  "prompts": [
+    {
+      "id": "cms-enterprise-yaml-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "intent": "solution_discovery",
+      "persona": "developer",
+      "task": "launch_multisite_cms",
+      "funnel_stage": "discovery",
+      "language": "en",
+      "region": "us",
+      "tags": [
+        "cms",
+        "higher-education",
+        "multisite"
+      ],
+      "attributes": {
+        "fixture_answer": "Drupal is a strong fit for a large university multisite program. WordPress can also work for smaller departmental sites."
+      }
+    }
+  ],
+  "providers": {
+    "fixture": {
+      "model": "fixture-answer-engine"
+    }
+  }
+}
