@@ -47,6 +47,7 @@ PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli observe-answers fixtures/geo
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli inspect-observation fixtures/geo/drupal-answers.json obs-001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli inspect-product fixtures/geo/drupal-answers.json drupal
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli inspect-domain fixtures/geo/drupal-answers.json drupal.org
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli compare-observations fixtures/geo/drupal-answers.json fixtures/geo/drupal-answers-followup.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli run-task fixtures/tasks/setup-auth-discovery.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli evaluate-run fixtures/tasks/setup-auth-discovery.json artifacts/runs/FC-0001 --write

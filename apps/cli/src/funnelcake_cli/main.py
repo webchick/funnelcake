@@ -6,6 +6,7 @@ from pathlib import Path
 from funnelcake_answer_observation import (
     compare_observation_sets,
     format_observation_comparison,
+    format_domain_detail,
     format_observation_detail,
     format_observation_summary,
     format_product_detail,
@@ -149,6 +150,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_prompt.add_argument("path", help="Path to an answer observation JSON file.")
     inspect_prompt.add_argument("prompt_id", help="Prompt ID to inspect.")
+
+    inspect_domain = subparsers.add_parser(
+        "inspect-domain",
+        help="Print observations and prompts connected to one cited or retrieved domain.",
+    )
+    inspect_domain.add_argument("path", help="Path to an answer observation JSON file.")
+    inspect_domain.add_argument("domain", help="Domain or URL to inspect.")
 
     compare_observations = subparsers.add_parser(
         "compare-observations",
@@ -411,6 +419,11 @@ def inspect_prompt(path: str, prompt_id: str) -> str:
     return format_prompt_detail(observation_set, prompt_id)
 
 
+def inspect_domain(path: str, domain: str) -> str:
+    observation_set = load_observation_set(path)
+    return format_domain_detail(observation_set, domain)
+
+
 def compare_observations(baseline_path: str, followup_path: str) -> str:
     baseline = load_observation_set(baseline_path)
     followup = load_observation_set(followup_path)
@@ -512,6 +525,8 @@ def main() -> None:
         print(inspect_product(args.path, args.product))
     elif args.command == "inspect-prompt":
         print(inspect_prompt(args.path, args.prompt_id))
+    elif args.command == "inspect-domain":
+        print(inspect_domain(args.path, args.domain))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path))
     elif args.command == "run-task":

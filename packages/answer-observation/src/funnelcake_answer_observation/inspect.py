@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from .models import AnswerObservation, ObservationSet
 
 
@@ -199,6 +201,67 @@ def format_prompt_detail(
     return "\n".join(lines)
 
 
+def format_domain_detail(
+    observation_set: ObservationSet,
+    domain: str,
+) -> str:
+    normalized_domain = _normalize_domain(domain)
+    citation_matches = []
+    retrieved_matches = []
+    observation_ids = set()
+    prompt_ids = set()
+
+    for observation in observation_set.observations:
+        for citation in observation.citations:
+            if _normalize_domain(citation.domain or _domain_from_url(citation.url)) == normalized_domain:
+                citation_matches.append((observation, citation))
+                observation_ids.add(observation.id)
+                prompt_ids.add(observation.prompt_id)
+        for source in observation.retrieved_sources:
+            if _normalize_domain(source.domain or _domain_from_url(source.url)) == normalized_domain:
+                retrieved_matches.append((observation, source))
+                observation_ids.add(observation.id)
+                prompt_ids.add(observation.prompt_id)
+
+    lines = [
+        f"Domain {normalized_domain}",
+        f"set={observation_set.id}",
+        f"observations={len(observation_ids)}",
+        f"prompts={len(prompt_ids)}",
+        f"citations={len(citation_matches)}",
+        f"retrieved_sources={len(retrieved_matches)}",
+        "",
+        "Cited URLs",
+    ]
+    if citation_matches:
+        for observation, citation in citation_matches:
+            lines.append(
+                f"- {citation.url} observation={observation.id} "
+                f"prompt={observation.prompt_id} title={citation.title or ''}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "Retrieved URLs"])
+    if retrieved_matches:
+        for observation, source in retrieved_matches:
+            rank = f" rank={source.rank}" if source.rank is not None else ""
+            lines.append(
+                f"- {source.url} observation={observation.id} "
+                f"prompt={observation.prompt_id}{rank} title={source.title or ''}"
+            )
+    else:
+        lines.append("- none")
+
+    lines.extend(["", "Prompts"])
+    for prompt_id in sorted(prompt_ids):
+        prompt = next((item for item in observation_set.prompts if item.id == prompt_id), None)
+        prompt_text = prompt.prompt if prompt is not None else _prompt_text(observation_set, prompt_id)
+        lines.append(f"- {prompt_id}: {prompt_text}")
+
+    return "\n".join(lines)
+
+
 def _format_model(observation: AnswerObservation) -> str:
     if observation.model and observation.model_version:
         return f"{observation.model}@{observation.model_version}"
@@ -339,3 +402,21 @@ def _matches_product(
 
 def _indent(lines: list[str]) -> list[str]:
     return [f"  {line}" for line in lines]
+
+
+def _domain_from_url(url: str) -> str:
+    return urlparse(url).netloc
+
+
+def _normalize_domain(domain: str) -> str:
+    parsed = urlparse(domain)
+    candidate = parsed.netloc or parsed.path
+    return candidate.lower().removeprefix("www.")
+
+
+def _prompt_text(observation_set: ObservationSet, prompt_id: str) -> str:
+    observation = next(
+        (item for item in observation_set.observations if item.prompt_id == prompt_id),
+        None,
+    )
+    return observation.prompt if observation is not None else ""

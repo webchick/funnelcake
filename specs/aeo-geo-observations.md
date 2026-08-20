@@ -124,6 +124,16 @@ funnelcake inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
 Prompt inspection prints prompt metadata, the raw answer for each observation,
 provider/model/repetition metadata, mentions, citations, and claims.
 
+Use `inspect-domain` to drill from citation or retrieval domain summaries to
+URLs, observations, and prompts:
+
+```bash
+funnelcake inspect-domain fixtures/geo/drupal-answers.json drupal.org
+```
+
+Domain inspection accepts a bare domain or URL and prints cited URLs, retrieved
+URLs, observation IDs, prompt IDs, and prompt text.
+
 ## Comparison
 
 Use `compare-observations` to compare two observation sets:
