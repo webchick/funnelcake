@@ -16,6 +16,7 @@ from funnelcake_discover_eval import (
     run_task_spec,
     send_run_to_phoenix,
     write_otlp_json,
+    write_run_evaluation,
     write_trial_run,
 )
 from funnelcake_intent_extraction import IntentProfile
@@ -126,6 +127,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     evaluate_run.add_argument("task_path", help="Path to a benchmark task JSON spec.")
     evaluate_run.add_argument("run_path", help="Path to a run artifact directory or run.json.")
+    evaluate_run.add_argument(
+        "--write",
+        action="store_true",
+        help="Write evaluation.json next to the run artifact.",
+    )
+    evaluate_run.add_argument(
+        "--out",
+        help="Path for evaluation JSON output. Implies --write.",
+    )
     return parser
 
 
@@ -186,7 +196,15 @@ def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
         return f"No runs found in {runs_dir}"
 
     overview = build_dashboard_from_trial_runs(runs, eligible_count=eligible_count)
-    return format_dashboard_overview(overview)
+    evaluation_count = len(list(Path(runs_dir).glob("*/evaluation.json")))
+    return "\n".join(
+        [
+            format_dashboard_overview(overview),
+            "",
+            "Evaluations",
+            f"written={evaluation_count}/{len(runs)}",
+        ]
+    )
 
 
 def capture_run(path: str, artifacts_dir: str) -> str:
@@ -267,8 +285,18 @@ def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     )
 
 
-def evaluate_run_command(task_path: str, run_path: str) -> str:
-    return format_run_evaluation(evaluate_task_run(task_path, run_path))
+def evaluate_run_command(
+    task_path: str,
+    run_path: str,
+    write: bool,
+    output_path: str | None,
+) -> str:
+    evaluation = evaluate_task_run(task_path, run_path)
+    lines = [format_run_evaluation(evaluation)]
+    if write or output_path is not None:
+        written_path = write_run_evaluation(evaluation, run_path, output_path)
+        lines.extend(["", f"output_path={written_path}"])
+    return "\n".join(lines)
 
 
 def main() -> None:
@@ -294,4 +322,4 @@ def main() -> None:
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":
-        print(evaluate_run_command(args.task_path, args.run_path))
+        print(evaluate_run_command(args.task_path, args.run_path, args.write, args.out))

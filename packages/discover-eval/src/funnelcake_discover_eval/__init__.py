@@ -13,6 +13,7 @@ from .evaluator import (
     evaluate_run,
     evaluate_task_run,
     format_run_evaluation,
+    write_run_evaluation,
 )
 from .models import DiscoveryEvalPlan, DiscoveryEvalResult
 from .otlp import trial_run_to_otlp_json, write_otlp_json
@@ -40,5 +41,6 @@ __all__ = [
     "trial_run_to_otlp_protobuf",
     "validate_trial_run",
     "write_otlp_json",
+    "write_run_evaluation",
     "write_trial_run",
 ]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from funnelcake_benchmark_builder import AssertionSpec, BenchmarkTask, CheckpointSpec, load_task_spec
@@ -41,6 +42,27 @@ def evaluate_task_run(
     task = load_task_spec(task_path)
     run = load_trial_run_artifact(run_path)
     return evaluate_run(task, run)
+
+
+def write_run_evaluation(
+    evaluation: RunEvaluation,
+    run_path: str | Path,
+    output_path: str | Path | None = None,
+) -> Path:
+    if output_path is None:
+        artifact_path = Path(run_path)
+        output_path = (
+            artifact_path / "evaluation.json"
+            if artifact_path.is_dir()
+            else artifact_path.with_name("evaluation.json")
+        )
+
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as output_file:
+        json.dump(asdict(evaluation), output_file, indent=2)
+        output_file.write("\n")
+    return path
 
 
 def evaluate_run(task: BenchmarkTask, run: TrialRun) -> RunEvaluation:
