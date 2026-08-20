@@ -184,7 +184,7 @@ class ObservationLoaderTest(unittest.TestCase):
 
     def test_runs_openai_provider_with_mocked_response(self) -> None:
         response_body = {
-            "created_at": "2026-08-20T04:50:00Z",
+            "created_at": 1787201400,
             "output_text": "Drupal is a strong fit for large university multisite needs.",
             "output": [
                 {
@@ -231,6 +231,7 @@ class ObservationLoaderTest(unittest.TestCase):
         self.assertEqual(payload["tools"], [{"type": "web_search"}])
         self.assertFalse(payload["store"])
         self.assertEqual(observation.provider, "openai")
+        self.assertEqual(observation.timestamp, "2026-08-20T04:50:00Z")
         self.assertEqual(observation.raw_answer, response_body["output_text"])
         self.assertEqual(observation.citations[0].url, "https://www.drupal.org/")
 

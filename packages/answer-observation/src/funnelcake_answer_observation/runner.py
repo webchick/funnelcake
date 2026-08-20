@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib import request
@@ -115,7 +116,7 @@ def run_openai_provider(path: str | Path, api_key: str | None = None) -> Observa
                 country=raw.get("country"),
                 region=prompt.region,
                 language=prompt.language,
-                timestamp=response.get("created_at"),
+                timestamp=_response_timestamp(response),
                 run_number=raw.get("run_number", 1),
                 repetition=raw.get("repetition", 1),
                 raw_request={
@@ -186,6 +187,15 @@ def _response_text(response: dict[str, Any]) -> str:
             if isinstance(text, str):
                 texts.append(text)
     return "\n".join(texts)
+
+
+def _response_timestamp(response: dict[str, Any]) -> str | None:
+    created_at = response.get("created_at")
+    if isinstance(created_at, int | float):
+        return datetime.fromtimestamp(created_at, timezone.utc).isoformat().replace("+00:00", "Z")
+    if isinstance(created_at, str):
+        return created_at
+    return None
 
 
 def _response_citations(response: dict[str, Any]) -> tuple[Citation, ...]:
