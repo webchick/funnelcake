@@ -10,8 +10,10 @@ from funnelcake_discover_eval import (
     diagnose_task_run,
     evaluate_task_run,
     format_diagnosis_bundle,
+    format_diagnosis_detail,
     format_trial_run,
     format_run_evaluation,
+    load_diagnosis_bundle_artifact,
     load_trial_run,
     load_diagnosis_bundles_dir,
     load_trial_run_artifact,
@@ -162,6 +164,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         help="Path for diagnosis JSON output. Implies --write.",
     )
+
+    show_diagnosis = subparsers.add_parser(
+        "show-diagnosis",
+        help="Print a diagnosis and resolve its evidence references against the trace.",
+    )
+    show_diagnosis.add_argument(
+        "run_path",
+        help="Path to a run artifact directory, run.json, or diagnosis.json.",
+    )
+    show_diagnosis.add_argument("diagnosis_id", help="Diagnosis ID to inspect.")
 
     run_suite = subparsers.add_parser(
         "run-suite",
@@ -377,6 +389,15 @@ def diagnose_run_command(
     return "\n".join(lines)
 
 
+def show_diagnosis_command(run_path: str, diagnosis_id: str) -> str:
+    artifact_path = Path(run_path)
+    if artifact_path.name in {"run.json", "diagnosis.json"}:
+        artifact_path = artifact_path.parent
+    run = load_trial_run_artifact(artifact_path)
+    bundle = load_diagnosis_bundle_artifact(artifact_path)
+    return format_diagnosis_detail(bundle, run, diagnosis_id)
+
+
 def run_suite_command(
     paths: list[str],
     artifacts_dir: str,
@@ -427,5 +448,7 @@ def main() -> None:
                 args.out,
             )
         )
+    elif args.command == "show-diagnosis":
+        print(show_diagnosis_command(args.run_path, args.diagnosis_id))
     elif args.command == "run-suite":
         print(run_suite_command(args.paths, args.artifacts_dir, args.agent, args.eligible_count))

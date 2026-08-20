@@ -36,6 +36,15 @@ def load_diagnosis_bundle(path: str | Path) -> DiagnosisBundle:
     )
 
 
+def load_diagnosis_bundle_artifact(path: str | Path) -> DiagnosisBundle:
+    artifact_path = Path(path)
+    if artifact_path.name == "run.json":
+        artifact_path = artifact_path.with_name("diagnosis.json")
+    elif artifact_path.name != "diagnosis.json":
+        artifact_path = artifact_path / "diagnosis.json"
+    return load_diagnosis_bundle(artifact_path)
+
+
 def load_diagnosis_bundles_dir(path: str | Path) -> tuple[DiagnosisBundle, ...]:
     runs_dir = Path(path)
     if not runs_dir.exists():
@@ -122,6 +131,46 @@ def format_diagnosis_bundle(bundle: DiagnosisBundle) -> str:
             lines.append(f"evidence={_format_evidence_ref(ref)}")
         if diagnosis.suggested_intervention:
             lines.append(f"suggested_intervention={diagnosis.suggested_intervention}")
+
+    return "\n".join(lines)
+
+
+def format_diagnosis_detail(
+    bundle: DiagnosisBundle,
+    run: TrialRun,
+    diagnosis_id: str,
+) -> str:
+    diagnosis = next(
+        (item for item in bundle.diagnoses if item.id == diagnosis_id),
+        None,
+    )
+    if diagnosis is None:
+        available = ", ".join(item.id for item in bundle.diagnoses) or "none"
+        raise ValueError(f"diagnosis {diagnosis_id} not found; available: {available}")
+
+    lines = [
+        f"Diagnosis {diagnosis.id}",
+        f"title={diagnosis.title}",
+        f"stage={diagnosis.stage.value}",
+        f"evidence_grade={diagnosis.evidence_grade.value}",
+        f"affected_trials={','.join(diagnosis.affected_trial_ids)}",
+        "",
+        "Observed Pattern",
+        diagnosis.observed_pattern,
+    ]
+    if diagnosis.supporting_sources:
+        lines.extend(["", "Supporting Sources"])
+        lines.extend(f"- {source}" for source in diagnosis.supporting_sources)
+    if diagnosis.suggested_intervention:
+        lines.extend(["", "Suggested Intervention", diagnosis.suggested_intervention])
+
+    lines.extend(["", "Evidence"])
+    if not diagnosis.evidence:
+        lines.append("- none")
+        return "\n".join(lines)
+
+    for ref in diagnosis.evidence:
+        lines.extend(_format_resolved_evidence_ref(ref, run))
 
     return "\n".join(lines)
 
@@ -241,3 +290,31 @@ def _format_evidence_ref(ref: EvidenceRef) -> str:
     if ref.source_url is not None:
         parts.append(f"source_url={ref.source_url}")
     return " ".join(parts)
+
+
+def _format_resolved_evidence_ref(ref: EvidenceRef, run: TrialRun) -> list[str]:
+    lines = [f"- {_format_evidence_ref(ref)}"]
+    span = next((item for item in run.spans if item.id == ref.span_id), None)
+    if span is not None:
+        lines.append(f"  span={span.name} status={span.status_code}")
+        if span.status_message:
+            lines.append(f"  span_status_message={span.status_message}")
+
+    if ref.event_id is not None:
+        event = next(
+            (
+                event
+                for candidate_span in run.spans
+                for event in candidate_span.events
+                if event.id == ref.event_id
+            ),
+            None,
+        )
+        if event is not None:
+            lines.append(f"  event={event.timestamp} {event.type.value} {event.name}")
+            if event.body is not None:
+                lines.append(f"  body={event.body}")
+            for key, value in sorted(event.attributes.items()):
+                lines.append(f"  {key}={value}")
+
+    return lines
