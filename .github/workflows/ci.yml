@@ -9,8 +9,6 @@ on:
 jobs:
   python:
     runs-on: ubuntu-latest
-    env:
-      FC_PYTHONPATH: apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/answer-observation/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared
 
     steps:
       - name: Check out repository
@@ -21,8 +19,5 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Compile Python sources
-        run: python -m compileall apps packages shared tests
-
-      - name: Run tests
-        run: PYTHONPATH="$FC_PYTHONPATH" python -m unittest discover tests
+      - name: Run checks
+        run: ./scripts/check.sh
