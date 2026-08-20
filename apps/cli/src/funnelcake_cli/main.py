@@ -9,6 +9,7 @@ from funnelcake_discover_eval import (
     format_trial_run,
     load_trial_run,
     load_trial_run_artifact,
+    write_otlp_json,
     write_trial_run,
 )
 from funnelcake_intent_extraction import IntentProfile
@@ -39,6 +40,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print a readable view of a captured trial run.",
     )
     show_run.add_argument("path", help="Path to a run artifact directory or run.json.")
+
+    export_otlp = subparsers.add_parser(
+        "export-otlp",
+        help="Export a captured trial run as OTLP/JSON traces.",
+    )
+    export_otlp.add_argument("path", help="Path to a run artifact directory or run.json.")
+    export_otlp.add_argument(
+        "--out",
+        help="Path for the OTLP/JSON output. Defaults to <run-dir>/otlp.json.",
+    )
     return parser
 
 
@@ -113,6 +124,21 @@ def show_run(path: str) -> str:
     return format_trial_run(load_trial_run_artifact(path))
 
 
+def export_otlp(path: str, output_path: str | None) -> str:
+    run = load_trial_run_artifact(path)
+    if output_path is None:
+        artifact_path = Path(path)
+        output_path = str((artifact_path if artifact_path.is_dir() else artifact_path.parent) / "otlp.json")
+    written_path = write_otlp_json(run, output_path)
+    return "\n".join(
+        [
+            f"exported_trial={run.trial.id}",
+            f"trace_id={run.trial.trace_id}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -125,3 +151,5 @@ def main() -> None:
         print(capture_run(args.path, args.artifacts_dir))
     elif args.command == "show-run":
         print(show_run(args.path))
+    elif args.command == "export-otlp":
+        print(export_otlp(args.path, args.out))
