@@ -123,6 +123,82 @@ def format_product_detail(
     return "\n".join(lines)
 
 
+def format_prompt_detail(
+    observation_set: ObservationSet,
+    prompt_id: str,
+) -> str:
+    prompt = next((item for item in observation_set.prompts if item.id == prompt_id), None)
+    matching_observations = tuple(
+        observation
+        for observation in observation_set.observations
+        if observation.prompt_id == prompt_id
+    )
+    if prompt is None and not matching_observations:
+        available = sorted(
+            {item.id for item in observation_set.prompts}
+            | {item.prompt_id for item in observation_set.observations}
+        )
+        raise ValueError(
+            f"prompt {prompt_id} not found; available: {', '.join(available) or 'none'}"
+        )
+
+    prompt_text = prompt.prompt if prompt is not None else matching_observations[0].prompt
+    lines = [
+        f"Prompt {prompt_id}",
+        f"set={observation_set.id}",
+        f"observations={len(matching_observations)}",
+    ]
+    if prompt is not None:
+        lines.extend(
+            [
+                f"intent={prompt.intent or ''}",
+                f"persona={prompt.persona or ''}",
+                f"task={prompt.task or ''}",
+                f"funnel_stage={prompt.funnel_stage or ''}",
+                f"region={prompt.region or ''}",
+                f"language={prompt.language or ''}",
+                f"tags={','.join(prompt.tags)}",
+            ]
+        )
+
+    lines.extend(["", "Prompt Text", prompt_text, "", "Answers"])
+    if not matching_observations:
+        lines.append("- none")
+        return "\n".join(lines)
+
+    for observation in sorted(
+        matching_observations,
+        key=lambda item: (
+            item.provider or item.engine or "",
+            item.repetition if item.repetition is not None else -1,
+            item.id,
+        ),
+    ):
+        lines.extend(
+            [
+                "",
+                f"{observation.id}",
+                f"provider={observation.provider or observation.engine or ''}",
+                f"model={_format_model(observation)}",
+                f"repetition={observation.repetition if observation.repetition is not None else ''}",
+                f"timestamp={observation.timestamp or ''}",
+                f"success={observation.success}",
+                "",
+                observation.raw_answer,
+                "",
+                "Mentions",
+            ]
+        )
+        lines.extend(_indent(_format_mentions(observation)))
+        lines.extend(["", "Citations"])
+        lines.extend(_indent(_format_citations(observation)))
+        if observation.claims:
+            lines.extend(["", "Claims"])
+            lines.extend(_indent(_format_claims(observation)))
+
+    return "\n".join(lines)
+
+
 def _format_model(observation: AnswerObservation) -> str:
     if observation.model and observation.model_version:
         return f"{observation.model}@{observation.model_version}"
@@ -259,3 +335,7 @@ def _matches_product(
     if expected_product_id is not None and product_id == expected_product_id:
         return True
     return entity == expected_name
+
+
+def _indent(lines: list[str]) -> list[str]:
+    return [f"  {line}" for line in lines]

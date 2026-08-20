@@ -114,6 +114,16 @@ Product inspection accepts a product ID, name, or alias from the product
 registry and prints matching prompts, recommendation status, matching mentions,
 citations, and claims.
 
+Use `inspect-prompt` to drill from a prompt ID to every answer gathered for that
+user problem:
+
+```bash
+funnelcake inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
+```
+
+Prompt inspection prints prompt metadata, the raw answer for each observation,
+provider/model/repetition metadata, mentions, citations, and claims.
+
 ## Comparison
 
 Use `compare-observations` to compare two observation sets:

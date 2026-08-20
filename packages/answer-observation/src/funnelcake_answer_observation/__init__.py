@@ -1,6 +1,6 @@
 from .compare import compare_observation_sets, format_observation_comparison
 from .loader import load_observation_set, validate_observation_set
-from .inspect import format_observation_detail, format_product_detail
+from .inspect import format_observation_detail, format_product_detail, format_prompt_detail
 from .metrics import format_observation_summary, summarize_observations
 from .models import (
     AnswerObservation,
@@ -35,6 +35,7 @@ __all__ = [
     "format_observation_detail",
     "format_observation_summary",
     "format_product_detail",
+    "format_prompt_detail",
     "load_observation_set",
     "summarize_observations",
     "validate_observation_set",
