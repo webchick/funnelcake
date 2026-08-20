@@ -1,4 +1,5 @@
 from .loader import load_observation_set, validate_observation_set
+from .inspect import format_observation_detail
 from .metrics import format_observation_summary, summarize_observations
 from .models import (
     AnswerObservation,
@@ -24,6 +25,7 @@ __all__ = [
     "ProbePrompt",
     "Product",
     "RetrievedSource",
+    "format_observation_detail",
     "format_observation_summary",
     "load_observation_set",
     "summarize_observations",

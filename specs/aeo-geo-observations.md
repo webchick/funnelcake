@@ -89,6 +89,19 @@ Products use canonical IDs and aliases so extracted mentions can normalize
 
 These are observational metrics. They should not be phrased as causal claims.
 
+## Inspection
+
+Use `inspect-observation` to drill from an aggregate metric back to one raw
+observation:
+
+```bash
+funnelcake inspect-observation fixtures/geo/drupal-answers.json obs-001
+```
+
+Inspection prints the prompt, raw answer, model/provider metadata, product
+mentions, citations, retrieved sources, extracted claims, and raw provider
+payload keys. This is the v0 mechanism for keeping metrics attached to evidence.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

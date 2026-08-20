@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from funnelcake_answer_observation import (
+    format_observation_detail,
     format_observation_summary,
     load_observation_set,
     summarize_observations,
@@ -123,6 +124,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Summarize AEO/GEO answer observations from a JSON observation set.",
     )
     observe_answers.add_argument("path", help="Path to an answer observation JSON file.")
+
+    inspect_observation = subparsers.add_parser(
+        "inspect-observation",
+        help="Print one AEO/GEO observation with its raw answer and evidence.",
+    )
+    inspect_observation.add_argument("path", help="Path to an answer observation JSON file.")
+    inspect_observation.add_argument("observation_id", help="Observation ID to inspect.")
 
     run_task = subparsers.add_parser(
         "run-task",
@@ -363,6 +371,11 @@ def observe_answers(path: str) -> str:
     return format_observation_summary(summarize_observations(observation_set))
 
 
+def inspect_observation(path: str, observation_id: str) -> str:
+    observation_set = load_observation_set(path)
+    return format_observation_detail(observation_set, observation_id)
+
+
 def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     run, output_dir = run_task_spec(path, artifacts_dir=artifacts_dir, agent=agent)
     return "\n".join(
@@ -452,6 +465,8 @@ def main() -> None:
         print(validate_task(args.path))
     elif args.command == "observe-answers":
         print(observe_answers(args.path))
+    elif args.command == "inspect-observation":
+        print(inspect_observation(args.path, args.observation_id))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":

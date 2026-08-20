@@ -44,6 +44,7 @@ python3 -m pip install -e '.[phoenix]'
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli send-phoenix artifacts/runs/FC-0001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli validate-task fixtures/tasks/setup-auth-discovery.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli observe-answers fixtures/geo/drupal-answers.json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli inspect-observation fixtures/geo/drupal-answers.json obs-001
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli run-task fixtures/tasks/setup-auth-discovery.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli evaluate-run fixtures/tasks/setup-auth-discovery.json artifacts/runs/FC-0001 --write
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli diagnose-run fixtures/tasks/setup-auth-discovery.json artifacts/runs/FC-0001 --write
