@@ -34,6 +34,7 @@ Uses DESSERT metrics:
 
 ```bash
 ./scripts/check.sh
+./scripts/check-install.sh
 FC_PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/answer-observation/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli --help
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli dashboard-demo

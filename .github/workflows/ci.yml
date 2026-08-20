@@ -21,3 +21,6 @@ jobs:
 
       - name: Run checks
         run: ./scripts/check.sh
+
+      - name: Run install smoke test
+        run: ./scripts/check-install.sh
