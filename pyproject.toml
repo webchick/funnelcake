@@ -12,6 +12,11 @@ license = { text = "MIT" }
 authors = [{ name = "webchick" }]
 dependencies = []
 
+[project.optional-dependencies]
+phoenix = [
+  "opentelemetry-proto>=1.27",
+]
+
 [project.scripts]
 funnelcake = "funnelcake_cli.main:main"
 

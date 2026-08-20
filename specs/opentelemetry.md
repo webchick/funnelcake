@@ -105,3 +105,39 @@ funnelcake send-otlp artifacts/runs/FC-0001 --endpoint http://localhost:4318/v1/
 ```
 
 The local run JSON remains useful for product-level evidence and dashboard summaries. OTLP JSON or OTLP protobuf should be generated from that source of truth for Phoenix, Jaeger, Tempo, Honeycomb, and OpenTelemetry Collector workflows.
+
+## Phoenix
+
+Phoenix is the first recommended GUI target because it understands AI-oriented traces and OpenInference attributes.
+
+Install Funnelcake's optional Phoenix dependency:
+
+```bash
+python3 -m pip install -e '.[phoenix]'
+```
+
+Start Phoenix locally, then send a captured run:
+
+```bash
+funnelcake send-phoenix artifacts/runs/FC-0001
+```
+
+The default endpoint is:
+
+```text
+http://localhost:6006/v1/traces
+```
+
+Override it when needed:
+
+```bash
+funnelcake send-phoenix artifacts/runs/FC-0001 --endpoint https://your-phoenix.example.com/v1/traces
+```
+
+For Phoenix Cloud or authenticated deployments, pass an API key:
+
+```bash
+funnelcake send-phoenix artifacts/runs/FC-0001 --api-key "$PHOENIX_API_KEY"
+```
+
+The sender preserves Funnelcake's OpenTelemetry-compatible `trace_id` and `span_id` values so evidence references line up with the trace shown in Phoenix.

@@ -6,9 +6,11 @@ from pathlib import Path
 from funnelcake_benchmark_builder import BenchmarkSpec
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
+    PhoenixDependencyError,
     format_trial_run,
     load_trial_run,
     load_trial_run_artifact,
+    send_run_to_phoenix,
     write_otlp_json,
     write_trial_run,
 )
@@ -49,6 +51,26 @@ def build_parser() -> argparse.ArgumentParser:
     export_otlp.add_argument(
         "--out",
         help="Path for the OTLP/JSON output. Defaults to <run-dir>/otlp.json.",
+    )
+
+    send_phoenix = subparsers.add_parser(
+        "send-phoenix",
+        help="Send a captured trial run to Phoenix over OTLP HTTP/protobuf.",
+    )
+    send_phoenix.add_argument("path", help="Path to a run artifact directory or run.json.")
+    send_phoenix.add_argument(
+        "--endpoint",
+        default="http://localhost:6006/v1/traces",
+        help="Phoenix OTLP HTTP endpoint.",
+    )
+    send_phoenix.add_argument(
+        "--project-name",
+        default="funnelcake",
+        help="Phoenix project name to attach as a resource attribute.",
+    )
+    send_phoenix.add_argument(
+        "--api-key",
+        help="Phoenix API key for Phoenix Cloud or authenticated deployments.",
     )
     return parser
 
@@ -139,6 +161,32 @@ def export_otlp(path: str, output_path: str | None) -> str:
     )
 
 
+def send_phoenix(
+    path: str,
+    endpoint: str,
+    project_name: str,
+    api_key: str | None,
+) -> str:
+    try:
+        result = send_run_to_phoenix(
+            path,
+            endpoint=endpoint,
+            project_name=project_name,
+            api_key=api_key,
+        )
+    except (PhoenixDependencyError, RuntimeError) as exc:
+        return str(exc)
+
+    return "\n".join(
+        [
+            f"sent_trial={result['trial_id']}",
+            f"trace_id={result['trace_id']}",
+            f"endpoint={result['endpoint']}",
+            f"status={result['status']} {result['reason']}",
+        ]
+    )
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -153,3 +201,5 @@ def main() -> None:
         print(show_run(args.path))
     elif args.command == "export-otlp":
         print(export_otlp(args.path, args.out))
+    elif args.command == "send-phoenix":
+        print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))

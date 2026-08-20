@@ -38,4 +38,8 @@ PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli capture-run fixtures/runs/setup-auth-docs.json
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli show-run artifacts/runs/FC-0001
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli export-otlp artifacts/runs/FC-0001
+python3 -m pip install -e '.[phoenix]'
+PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli send-phoenix artifacts/runs/FC-0001
 ```
+
+See [specs/opentelemetry.md](specs/opentelemetry.md) for Phoenix and OTLP notes.
