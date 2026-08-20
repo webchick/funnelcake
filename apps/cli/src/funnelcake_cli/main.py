@@ -15,6 +15,7 @@ from funnelcake_answer_observation import (
     format_prompt_detail,
     load_observation_set,
     summarize_observations,
+    write_observation_set,
 )
 from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_task_spec
 from funnelcake_discover_eval import (
@@ -165,6 +166,17 @@ def build_parser() -> argparse.ArgumentParser:
     inspect_domain.add_argument("path", help="Path to an answer observation JSON file.")
     inspect_domain.add_argument("domain", help="Domain or URL to inspect.")
 
+    normalize_observations = subparsers.add_parser(
+        "normalize-observations",
+        help="Validate and write a normalized AEO/GEO observation set.",
+    )
+    normalize_observations.add_argument("path", help="Path to an answer observation JSON file.")
+    normalize_observations.add_argument(
+        "--out",
+        required=True,
+        help="Path for the normalized observation-set JSON output.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -221,6 +233,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     geo_inspect_domain.add_argument("path", help="Path to an answer observation JSON file.")
     geo_inspect_domain.add_argument("domain", help="Domain or URL to inspect.")
+
+    geo_normalize = geo_subparsers.add_parser(
+        "normalize",
+        help="Validate and write a normalized AEO/GEO observation set.",
+    )
+    geo_normalize.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_normalize.add_argument(
+        "--out",
+        required=True,
+        help="Path for the normalized observation-set JSON output.",
+    )
 
     geo_compare = geo_subparsers.add_parser(
         "compare",
@@ -496,6 +519,18 @@ def inspect_domain(path: str, domain: str) -> str:
     return format_domain_detail(observation_set, domain)
 
 
+def normalize_observations(path: str, output_path: str) -> str:
+    observation_set = load_observation_set(path)
+    written_path = write_observation_set(observation_set, output_path)
+    return "\n".join(
+        [
+            f"normalized_observation_set={observation_set.id}",
+            f"observations={len(observation_set.observations)}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def compare_observations(
     baseline_path: str,
     followup_path: str,
@@ -520,6 +555,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return inspect_prompt(args.path, args.prompt_id)
     if args.geo_command == "inspect-domain":
         return inspect_domain(args.path, args.domain)
+    if args.geo_command == "normalize":
+        return normalize_observations(args.path, args.out)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -626,6 +663,8 @@ def main() -> None:
         print(inspect_prompt(args.path, args.prompt_id))
     elif args.command == "inspect-domain":
         print(inspect_domain(args.path, args.domain))
+    elif args.command == "normalize-observations":
+        print(normalize_observations(args.path, args.out))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":

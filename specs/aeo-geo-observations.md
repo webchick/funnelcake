@@ -91,6 +91,20 @@ Products use canonical IDs and aliases so extracted mentions can normalize
 These are observational metrics. They should not be phrased as causal claims.
 Use `--json` when another tool needs the summary as structured data.
 
+## Normalization
+
+Collected answer-engine output should be normalized before analysis:
+
+```bash
+funnelcake geo normalize raw-observations.json --out observations.normalized.json
+```
+
+Normalization loads the accepted observation-set shape, applies canonical field
+names and defaults, validates required identifiers, and writes the canonical JSON
+shape consumed by summary, inspection, and comparison commands. Raw provider
+request/response payloads should remain in `raw_request` and `raw_response` so
+later analysis can be rerun without repeating the original probes.
+
 ## Inspection
 
 Use `inspect-observation` to drill from an aggregate metric back to one raw

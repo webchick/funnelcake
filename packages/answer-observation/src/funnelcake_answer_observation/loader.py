@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,16 @@ def load_observation_set(path: str | Path) -> ObservationSet:
     )
     validate_observation_set(observation_set)
     return observation_set
+
+
+def write_observation_set(observation_set: ObservationSet, path: str | Path) -> Path:
+    validate_observation_set(observation_set)
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as observation_file:
+        json.dump(asdict(observation_set), observation_file, indent=2)
+        observation_file.write("\n")
+    return output_path
 
 
 def validate_observation_set(observation_set: ObservationSet) -> None:

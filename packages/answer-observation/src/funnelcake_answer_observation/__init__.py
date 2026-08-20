@@ -1,5 +1,5 @@
 from .compare import compare_observation_sets, format_observation_comparison
-from .loader import load_observation_set, validate_observation_set
+from .loader import load_observation_set, validate_observation_set, write_observation_set
 from .inspect import (
     format_domain_detail,
     format_observation_detail,
@@ -45,4 +45,5 @@ __all__ = [
     "load_observation_set",
     "summarize_observations",
     "validate_observation_set",
+    "write_observation_set",
 ]
