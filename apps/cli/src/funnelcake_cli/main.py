@@ -165,6 +165,53 @@ def build_parser() -> argparse.ArgumentParser:
     compare_observations.add_argument("baseline_path", help="Path to the baseline observation JSON file.")
     compare_observations.add_argument("followup_path", help="Path to the follow-up observation JSON file.")
 
+    geo = subparsers.add_parser(
+        "geo",
+        help="Grouped AEO/GEO observation commands.",
+    )
+    geo_subparsers = geo.add_subparsers(dest="geo_command", required=True)
+
+    geo_summary = geo_subparsers.add_parser(
+        "summary",
+        help="Summarize AEO/GEO answer observations from a JSON observation set.",
+    )
+    geo_summary.add_argument("path", help="Path to an answer observation JSON file.")
+
+    geo_inspect_observation = geo_subparsers.add_parser(
+        "inspect-observation",
+        help="Print one AEO/GEO observation with its raw answer and evidence.",
+    )
+    geo_inspect_observation.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_inspect_observation.add_argument("observation_id", help="Observation ID to inspect.")
+
+    geo_inspect_product = geo_subparsers.add_parser(
+        "inspect-product",
+        help="Print all observations mentioning or recommending one AEO/GEO product.",
+    )
+    geo_inspect_product.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_inspect_product.add_argument("product", help="Product ID, name, or alias to inspect.")
+
+    geo_inspect_prompt = geo_subparsers.add_parser(
+        "inspect-prompt",
+        help="Print all AEO/GEO observations for one prompt.",
+    )
+    geo_inspect_prompt.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_inspect_prompt.add_argument("prompt_id", help="Prompt ID to inspect.")
+
+    geo_inspect_domain = geo_subparsers.add_parser(
+        "inspect-domain",
+        help="Print observations and prompts connected to one cited or retrieved domain.",
+    )
+    geo_inspect_domain.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_inspect_domain.add_argument("domain", help="Domain or URL to inspect.")
+
+    geo_compare = geo_subparsers.add_parser(
+        "compare",
+        help="Compare two AEO/GEO observation sets without making causal claims.",
+    )
+    geo_compare.add_argument("baseline_path", help="Path to the baseline observation JSON file.")
+    geo_compare.add_argument("followup_path", help="Path to the follow-up observation JSON file.")
+
     run_task = subparsers.add_parser(
         "run-task",
         help="Create a placeholder captured run from a benchmark task spec.",
@@ -430,6 +477,22 @@ def compare_observations(baseline_path: str, followup_path: str) -> str:
     return format_observation_comparison(compare_observation_sets(baseline, followup))
 
 
+def geo_command(args: argparse.Namespace) -> str:
+    if args.geo_command == "summary":
+        return observe_answers(args.path)
+    if args.geo_command == "inspect-observation":
+        return inspect_observation(args.path, args.observation_id)
+    if args.geo_command == "inspect-product":
+        return inspect_product(args.path, args.product)
+    if args.geo_command == "inspect-prompt":
+        return inspect_prompt(args.path, args.prompt_id)
+    if args.geo_command == "inspect-domain":
+        return inspect_domain(args.path, args.domain)
+    if args.geo_command == "compare":
+        return compare_observations(args.baseline_path, args.followup_path)
+    raise ValueError(f"unknown geo command: {args.geo_command}")
+
+
 def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     run, output_dir = run_task_spec(path, artifacts_dir=artifacts_dir, agent=agent)
     return "\n".join(
@@ -529,6 +592,8 @@ def main() -> None:
         print(inspect_domain(args.path, args.domain))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path))
+    elif args.command == "geo":
+        print(geo_command(args))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":

@@ -79,7 +79,7 @@ Products use canonical IDs and aliases so extracted mentions can normalize
 
 ## Initial Metrics
 
-`observe-answers` reports:
+`geo summary` reports:
 
 - visibility: how often the subject appeared
 - recommendation rate: how often the subject was recommended
@@ -96,7 +96,7 @@ Use `inspect-observation` to drill from an aggregate metric back to one raw
 observation:
 
 ```bash
-funnelcake inspect-observation fixtures/geo/drupal-answers.json obs-001
+funnelcake geo inspect-observation fixtures/geo/drupal-answers.json obs-001
 ```
 
 Inspection prints the prompt, raw answer, model/provider metadata, product
@@ -107,7 +107,7 @@ Use `inspect-product` to drill from aggregate product visibility to every
 observation where that product appeared:
 
 ```bash
-funnelcake inspect-product fixtures/geo/drupal-answers.json drupal
+funnelcake geo inspect-product fixtures/geo/drupal-answers.json drupal
 ```
 
 Product inspection accepts a product ID, name, or alias from the product
@@ -118,7 +118,7 @@ Use `inspect-prompt` to drill from a prompt ID to every answer gathered for that
 user problem:
 
 ```bash
-funnelcake inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
+funnelcake geo inspect-prompt fixtures/geo/drupal-answers.json cms-enterprise-001
 ```
 
 Prompt inspection prints prompt metadata, the raw answer for each observation,
@@ -128,7 +128,7 @@ Use `inspect-domain` to drill from citation or retrieval domain summaries to
 URLs, observations, and prompts:
 
 ```bash
-funnelcake inspect-domain fixtures/geo/drupal-answers.json drupal.org
+funnelcake geo inspect-domain fixtures/geo/drupal-answers.json drupal.org
 ```
 
 Domain inspection accepts a bare domain or URL and prints cited URLs, retrieved
@@ -139,12 +139,15 @@ URLs, observation IDs, prompt IDs, and prompt text.
 Use `compare-observations` to compare two observation sets:
 
 ```bash
-funnelcake compare-observations baseline.json followup.json
+funnelcake geo compare baseline.json followup.json
 ```
 
 Comparison reports percentage-point changes for visibility, recommendation
 rate, first-choice rate, and share of recommendation. It intentionally says
 these are observational deltas rather than causal claims.
+
+The older flat commands, such as `observe-answers`, `inspect-product`, and
+`compare-observations`, remain available as compatibility aliases.
 
 ## Deferred
 
