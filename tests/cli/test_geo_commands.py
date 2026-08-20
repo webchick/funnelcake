@@ -124,6 +124,30 @@ class GeoCliTest(unittest.TestCase):
         self.assertEqual(observation_count, 1)
         self.assertEqual(mention_count, 2)
 
+    def test_geo_extract_products_writes_analyzable_observations(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "extracted.json"
+            result = self.run_cli(
+                "geo",
+                "extract-products",
+                "fixtures/geo/drupal-unextracted.json",
+                "--out",
+                str(output_path),
+            )
+            summary_result = self.run_cli(
+                "geo",
+                "summary",
+                str(output_path),
+                "--json",
+            )
+            summary = json.loads(summary_result.stdout)
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(summary_result.returncode, 0, summary_result.stderr)
+        self.assertIn("extracted_observation_set=drupal-unextracted-sample", result.stdout)
+        self.assertEqual(summary["subject_visibility"]["mention_count"], 1)
+        self.assertEqual(summary["subject_visibility"]["recommended_count"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

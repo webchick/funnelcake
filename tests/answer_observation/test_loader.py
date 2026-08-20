@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from funnelcake_answer_observation import (
+    extract_product_mentions,
     load_observation_set,
     import_observation_set_sqlite,
     validate_observation_file,
@@ -152,6 +153,18 @@ class ObservationLoaderTest(unittest.TestCase):
         self.assertEqual(retrieved_count, 2)
         self.assertEqual(mention_count, 2)
         self.assertEqual(first_mention, ("drupal", 1, 1))
+
+    def test_extracts_product_mentions_from_answer_text(self) -> None:
+        observation_set = load_observation_set(REPO_ROOT / "fixtures/geo/drupal-unextracted.json")
+        extracted = extract_product_mentions(observation_set)
+        mentions = extracted.observations[0].mentions
+
+        self.assertEqual([mention.product_id for mention in mentions], ["drupal", "wordpress"])
+        self.assertEqual(mentions[0].role, "recommended")
+        self.assertEqual(mentions[0].display_name, "Drupal")
+        self.assertEqual(mentions[1].role, "mentioned")
+        self.assertEqual(mentions[1].display_name, "WordPress")
+        self.assertEqual(mentions[0].attributes["extracted_by"], "deterministic_product_alias")
 
 
 if __name__ == "__main__":

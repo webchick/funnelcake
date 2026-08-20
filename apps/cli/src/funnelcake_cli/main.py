@@ -7,6 +7,7 @@ from pathlib import Path
 
 from funnelcake_answer_observation import (
     compare_observation_sets,
+    extract_product_mentions,
     format_observation_comparison,
     format_domain_detail,
     format_observation_detail,
@@ -202,6 +203,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="SQLite database path.",
     )
 
+    extract_products = subparsers.add_parser(
+        "extract-observation-products",
+        help="Extract product mentions from raw AEO/GEO answer text.",
+    )
+    extract_products.add_argument("path", help="Path to an answer observation JSON file.")
+    extract_products.add_argument(
+        "--out",
+        required=True,
+        help="Path for the enriched observation-set JSON output.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -290,6 +302,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--db",
         default="data/funnelcake.db",
         help="SQLite database path.",
+    )
+
+    geo_extract_products = geo_subparsers.add_parser(
+        "extract-products",
+        help="Extract product mentions from raw AEO/GEO answer text.",
+    )
+    geo_extract_products.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_extract_products.add_argument(
+        "--out",
+        required=True,
+        help="Path for the enriched observation-set JSON output.",
     )
 
     geo_compare = geo_subparsers.add_parser(
@@ -600,6 +623,21 @@ def import_observations_sqlite(path: str, db_path: str) -> str:
     )
 
 
+def extract_observation_products(path: str, output_path: str) -> str:
+    observation_set = load_observation_set(path)
+    extracted = extract_product_mentions(observation_set)
+    written_path = write_observation_set(extracted, output_path)
+    mention_count = sum(len(observation.mentions) for observation in extracted.observations)
+    return "\n".join(
+        [
+            f"extracted_observation_set={extracted.id}",
+            f"observations={len(extracted.observations)}",
+            f"mentions={mention_count}",
+            f"output_path={written_path}",
+        ]
+    )
+
+
 def print_observation_validation(path: str, json_output: bool) -> None:
     report = validate_observation_file(path)
     print(format_json(report) if json_output else format_observation_validation_report(report))
@@ -637,6 +675,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return validate_observations(args.path, args.json)
     if args.geo_command == "import-sqlite":
         return import_observations_sqlite(args.path, args.db)
+    if args.geo_command == "extract-products":
+        return extract_observation_products(args.path, args.out)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -749,6 +789,8 @@ def main() -> None:
         print_observation_validation(args.path, args.json)
     elif args.command == "import-observations-sqlite":
         print(import_observations_sqlite(args.path, args.db))
+    elif args.command == "extract-observation-products":
+        print(extract_observation_products(args.path, args.out))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":

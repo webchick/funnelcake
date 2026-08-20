@@ -201,6 +201,22 @@ and `product_mentions` tables. Raw provider request and response payloads stay
 attached to `observations` as JSON text so stored records can still be traced
 back to the original evidence.
 
+## Product Extraction
+
+Use deterministic product extraction when raw observations contain answer text
+and a product registry but do not yet have structured mentions:
+
+```bash
+funnelcake geo extract-products raw-observations.json --out extracted-observations.json
+```
+
+The v0 extractor scans frozen answer text for configured product names and
+aliases. It is conservative: it does not invent products outside the registry,
+and it only marks a product as recommended when the text near the product
+contains recommendation language. Provider execution and product extraction
+remain separate steps so extracted structure can be improved without rerunning
+the original probes.
+
 ## Deferred
 
 The broader `geo.md` plan also sketches provider adapters, SQLite persistence,

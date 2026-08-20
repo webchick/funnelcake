@@ -54,6 +54,7 @@ PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/dr
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo validate fixtures/geo/drupal-raw-collected.json --json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo normalize fixtures/geo/drupal-answers.json --out artifacts/geo/drupal-answers.normalized.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo normalize fixtures/geo/drupal-raw-collected.json --out artifacts/geo/drupal-raw-collected.normalized.json
+PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo extract-products fixtures/geo/drupal-unextracted.json --out artifacts/geo/drupal-extracted.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo import-sqlite fixtures/geo/drupal-answers.json --db data/funnelcake.db
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo compare fixtures/geo/drupal-answers.json fixtures/geo/drupal-answers-followup.json
 PYTHONPATH=$FC_PYTHONPATH python3 -m funnelcake_cli geo compare fixtures/geo/drupal-answers.json fixtures/geo/drupal-answers-followup.json --json

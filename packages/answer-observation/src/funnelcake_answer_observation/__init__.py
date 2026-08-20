@@ -1,4 +1,5 @@
 from .compare import compare_observation_sets, format_observation_comparison
+from .extract import extract_product_mentions
 from .loader import (
     format_observation_validation_report,
     load_observation_set,
@@ -45,6 +46,7 @@ __all__ = [
     "Product",
     "RetrievedSource",
     "compare_observation_sets",
+    "extract_product_mentions",
     "format_observation_comparison",
     "format_domain_detail",
     "format_observation_detail",
