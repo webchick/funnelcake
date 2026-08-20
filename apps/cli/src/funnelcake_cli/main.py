@@ -11,10 +11,12 @@ from funnelcake_answer_observation import (
     format_domain_detail,
     format_observation_detail,
     format_observation_summary,
+    format_observation_validation_report,
     format_product_detail,
     format_prompt_detail,
     load_observation_set,
     summarize_observations,
+    validate_observation_file,
     write_observation_set,
 )
 from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_task_spec
@@ -177,6 +179,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path for the normalized observation-set JSON output.",
     )
 
+    validate_observations = subparsers.add_parser(
+        "validate-observations",
+        help="Validate an AEO/GEO observation set and print ingestion warnings.",
+    )
+    validate_observations.add_argument("path", help="Path to an answer observation JSON file.")
+    validate_observations.add_argument(
+        "--json",
+        action="store_true",
+        help="Print validation results as machine-readable JSON.",
+    )
+
     compare_observations = subparsers.add_parser(
         "compare-observations",
         help="Compare two AEO/GEO observation sets without making causal claims.",
@@ -243,6 +256,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         required=True,
         help="Path for the normalized observation-set JSON output.",
+    )
+
+    geo_validate = geo_subparsers.add_parser(
+        "validate",
+        help="Validate an AEO/GEO observation set and print ingestion warnings.",
+    )
+    geo_validate.add_argument("path", help="Path to an answer observation JSON file.")
+    geo_validate.add_argument(
+        "--json",
+        action="store_true",
+        help="Print validation results as machine-readable JSON.",
     )
 
     geo_compare = geo_subparsers.add_parser(
@@ -531,6 +555,20 @@ def normalize_observations(path: str, output_path: str) -> str:
     )
 
 
+def validate_observations(path: str, json_output: bool = False) -> str:
+    report = validate_observation_file(path)
+    if json_output:
+        return format_json(report)
+    return format_observation_validation_report(report)
+
+
+def print_observation_validation(path: str, json_output: bool) -> None:
+    report = validate_observation_file(path)
+    print(format_json(report) if json_output else format_observation_validation_report(report))
+    if not report.valid:
+        raise SystemExit(1)
+
+
 def compare_observations(
     baseline_path: str,
     followup_path: str,
@@ -557,6 +595,8 @@ def geo_command(args: argparse.Namespace) -> str:
         return inspect_domain(args.path, args.domain)
     if args.geo_command == "normalize":
         return normalize_observations(args.path, args.out)
+    if args.geo_command == "validate":
+        return validate_observations(args.path, args.json)
     if args.geo_command == "compare":
         return compare_observations(args.baseline_path, args.followup_path, args.json)
     raise ValueError(f"unknown geo command: {args.geo_command}")
@@ -665,9 +705,14 @@ def main() -> None:
         print(inspect_domain(args.path, args.domain))
     elif args.command == "normalize-observations":
         print(normalize_observations(args.path, args.out))
+    elif args.command == "validate-observations":
+        print_observation_validation(args.path, args.json)
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path, args.json))
     elif args.command == "geo":
+        if args.geo_command == "validate":
+            print_observation_validation(args.path, args.json)
+            return
         print(geo_command(args))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))

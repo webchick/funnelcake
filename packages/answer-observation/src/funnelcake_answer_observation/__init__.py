@@ -1,5 +1,11 @@
 from .compare import compare_observation_sets, format_observation_comparison
-from .loader import load_observation_set, validate_observation_set, write_observation_set
+from .loader import (
+    format_observation_validation_report,
+    load_observation_set,
+    validate_observation_file,
+    validate_observation_set,
+    write_observation_set,
+)
 from .inspect import (
     format_domain_detail,
     format_observation_detail,
@@ -17,6 +23,7 @@ from .models import (
     ObservationComparison,
     ObservationSet,
     ObservationSummary,
+    ObservationValidationReport,
     ProbePrompt,
     Product,
     RetrievedSource,
@@ -32,6 +39,7 @@ __all__ = [
     "ObservationComparison",
     "ObservationSet",
     "ObservationSummary",
+    "ObservationValidationReport",
     "ProbePrompt",
     "Product",
     "RetrievedSource",
@@ -40,10 +48,12 @@ __all__ = [
     "format_domain_detail",
     "format_observation_detail",
     "format_observation_summary",
+    "format_observation_validation_report",
     "format_product_detail",
     "format_prompt_detail",
     "load_observation_set",
     "summarize_observations",
+    "validate_observation_file",
     "validate_observation_set",
     "write_observation_set",
 ]

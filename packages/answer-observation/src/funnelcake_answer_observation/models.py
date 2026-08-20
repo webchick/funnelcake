@@ -171,3 +171,15 @@ class ObservationComparison:
     baseline_response_count: int
     followup_response_count: int
     entity_changes: tuple[EntityVisibilityChange, ...]
+
+
+@dataclass(frozen=True)
+class ObservationValidationReport:
+    path: str
+    valid: bool
+    observation_set_id: str | None = None
+    observation_count: int = 0
+    prompt_count: int = 0
+    product_count: int = 0
+    errors: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()

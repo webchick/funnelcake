@@ -112,6 +112,21 @@ The loader accepts common collected-output aliases such as `subjectEntity`,
 `fixtures/geo/drupal-raw-collected.json` for a minimal raw-to-normalized
 example.
 
+## Validation
+
+Use validation before normalizing or reporting on newly collected observations:
+
+```bash
+funnelcake geo validate raw-observations.json
+```
+
+Hard validation errors fail the file when required identifiers, prompts, or
+observations are missing. Warnings flag evidence-quality issues that may still
+analyze successfully, such as missing model/provider metadata, empty raw
+answers, observations without mentions, citations, or search retrievals, and
+product/prompt references that are not in the local registries. Use `--json`
+when another tool needs the validation report as structured data.
+
 ## Inspection
 
 Use `inspect-observation` to drill from an aggregate metric back to one raw
