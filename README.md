@@ -48,4 +48,6 @@ PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli dashboard-summary
 ```
 
+`run-suite` writes `run.json`, `evaluation.json`, and `diagnosis.json` artifacts for each task. `dashboard-summary` loads those artifacts so failure clusters can include diagnosis IDs and evidence grades.
+
 See [specs/opentelemetry.md](specs/opentelemetry.md) for Phoenix and OTLP notes.

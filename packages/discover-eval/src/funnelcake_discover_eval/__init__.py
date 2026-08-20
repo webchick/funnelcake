@@ -21,6 +21,8 @@ from .diagnosis import (
     diagnose_run,
     diagnose_task_run,
     format_diagnosis_bundle,
+    load_diagnosis_bundle,
+    load_diagnosis_bundles_dir,
     write_diagnosis_bundle,
 )
 from .models import DiscoveryEvalPlan, DiscoveryEvalResult
@@ -49,6 +51,8 @@ __all__ = [
     "format_trial_run",
     "format_run_evaluation",
     "format_suite_run",
+    "load_diagnosis_bundle",
+    "load_diagnosis_bundles_dir",
     "load_run_evaluation",
     "load_trial_run",
     "load_trial_run_artifact",

@@ -13,6 +13,7 @@ from funnelcake_discover_eval import (
     format_trial_run,
     format_run_evaluation,
     load_trial_run,
+    load_diagnosis_bundles_dir,
     load_trial_run_artifact,
     load_trial_runs_dir,
     run_task_spec,
@@ -245,9 +246,19 @@ def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
     if not runs:
         return f"No runs found in {runs_dir}"
 
-    overview = build_dashboard_from_trial_runs(runs, eligible_count=eligible_count)
+    diagnosis_bundles = load_diagnosis_bundles_dir(runs_dir)
+    diagnoses = tuple(
+        diagnosis
+        for bundle in diagnosis_bundles
+        for diagnosis in bundle.diagnoses
+    )
+    overview = build_dashboard_from_trial_runs(
+        runs,
+        eligible_count=eligible_count,
+        diagnoses=diagnoses,
+    )
     evaluation_count = len(list(Path(runs_dir).glob("*/evaluation.json")))
-    diagnosis_count = len(list(Path(runs_dir).glob("*/diagnosis.json")))
+    diagnosis_count = len(diagnosis_bundles)
     return "\n".join(
         [
             format_dashboard_overview(overview),

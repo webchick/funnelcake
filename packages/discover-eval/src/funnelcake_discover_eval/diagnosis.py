@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from funnelcake_benchmark_builder import BenchmarkTask, load_task_spec
-from funnelcake_shared import Diagnosis, EvidenceGrade, EvidenceRef, Failure, TrialRun
+from funnelcake_shared import DessertStage, Diagnosis, EvidenceGrade, EvidenceRef, Failure, TrialRun
 
 from .capture import load_trial_run_artifact
 from .evaluator import RunEvaluation, evaluate_run, load_run_evaluation
@@ -23,6 +23,28 @@ class DiagnosisBundle:
     task_id: str
     trial_id: str
     diagnoses: tuple[Diagnosis, ...]
+
+
+def load_diagnosis_bundle(path: str | Path) -> DiagnosisBundle:
+    with Path(path).open(encoding="utf-8") as diagnosis_file:
+        raw = json.load(diagnosis_file)
+
+    return DiagnosisBundle(
+        task_id=raw["task_id"],
+        trial_id=raw["trial_id"],
+        diagnoses=tuple(_diagnosis(record) for record in raw.get("diagnoses", [])),
+    )
+
+
+def load_diagnosis_bundles_dir(path: str | Path) -> tuple[DiagnosisBundle, ...]:
+    runs_dir = Path(path)
+    if not runs_dir.exists():
+        return ()
+
+    return tuple(
+        load_diagnosis_bundle(diagnosis_file)
+        for diagnosis_file in sorted(runs_dir.glob("*/diagnosis.json"))
+    )
 
 
 def diagnose_task_run(
@@ -115,6 +137,29 @@ def _load_or_build_evaluation(
         if evaluation_path.exists():
             return load_run_evaluation(evaluation_path)
     return evaluate_run(task, run)
+
+
+def _diagnosis(record: dict[str, Any]) -> Diagnosis:
+    return Diagnosis(
+        id=record["id"],
+        title=record["title"],
+        stage=DessertStage(record["stage"]),
+        evidence_grade=EvidenceGrade(record["evidence_grade"]),
+        affected_trial_ids=tuple(record.get("affected_trial_ids", [])),
+        observed_pattern=record["observed_pattern"],
+        supporting_sources=tuple(record.get("supporting_sources", [])),
+        suggested_intervention=record.get("suggested_intervention"),
+        evidence=tuple(_evidence_ref(item) for item in record.get("evidence", [])),
+    )
+
+
+def _evidence_ref(record: dict[str, Any]) -> EvidenceRef:
+    return EvidenceRef(
+        trace_id=record["trace_id"],
+        span_id=record.get("span_id"),
+        event_id=record.get("event_id"),
+        source_url=record.get("source_url"),
+    )
 
 
 def _diagnosis_from_failure(index: int, run: TrialRun, failure: Failure) -> Diagnosis:

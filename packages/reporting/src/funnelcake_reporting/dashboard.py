@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from funnelcake_shared import (
     DessertStage,
     Diagnosis,
+    EvidenceGrade,
     Failure,
     StageMetric,
     Trial,
@@ -45,6 +46,7 @@ class FailureClusterSummary:
     failure_type: str
     affected_trials: int
     diagnosis_ids: tuple[str, ...] = ()
+    evidence_grades: tuple[EvidenceGrade, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -115,9 +117,13 @@ def summarize_failure_clusters(
     for diagnosis in diagnoses:
         for trial_id in diagnosis.affected_trial_ids:
             for failure in failures:
-                if failure.trial_id == trial_id:
+                if failure.trial_id == trial_id and _diagnosis_matches_failure_type(
+                    diagnosis,
+                    failure.failure_type,
+                ):
                     key = (failure.stage, failure.failure_type)
                     diagnosis_index.setdefault(key, []).append(diagnosis.id)
+                    break
 
     summaries = [
         FailureClusterSummary(
@@ -125,6 +131,7 @@ def summarize_failure_clusters(
             failure_type=failure_type,
             affected_trials=count,
             diagnosis_ids=tuple(sorted(set(diagnosis_index.get((stage, failure_type), [])))),
+            evidence_grades=_evidence_grades_for_cluster(stage, failure_type, failures, diagnoses),
         )
         for (stage, failure_type), count in counts.items()
     ]
@@ -187,6 +194,7 @@ def build_dashboard_overview(
 def build_dashboard_from_trial_runs(
     runs: tuple[TrialRun, ...],
     eligible_count: int | None = None,
+    diagnoses: tuple[Diagnosis, ...] = (),
 ) -> DashboardOverview:
     trials = tuple(run.trial for run in runs)
     failures = tuple(failure for run in runs for failure in run.failures)
@@ -195,7 +203,7 @@ def build_dashboard_from_trial_runs(
     return build_dashboard_overview(
         trials=trials,
         failures=failures,
-        diagnoses=(),
+        diagnoses=diagnoses,
         metrics=metrics,
         eligible_count=eligible_count if eligible_count is not None else max(len(runs), 1),
     )
@@ -246,14 +254,45 @@ def format_dashboard_overview(overview: DashboardOverview) -> str:
             ]
         )
         for cluster in leak.top_clusters:
-            lines.append(f"- {cluster.failure_type}: {cluster.affected_trials}")
+            lines.append(_format_cluster_line(cluster, include_stage=False))
 
     if overview.top_failure_clusters:
         lines.extend(["", "Top Failure Clusters"])
         for cluster in overview.top_failure_clusters:
-            lines.append(
-                f"- {cluster.stage.value}/{cluster.failure_type}: "
-                f"{cluster.affected_trials}"
-            )
+            lines.append(_format_cluster_line(cluster, include_stage=True))
 
     return "\n".join(lines)
+
+
+def _evidence_grades_for_cluster(
+    stage: DessertStage,
+    failure_type: str,
+    failures: tuple[Failure, ...],
+    diagnoses: tuple[Diagnosis, ...],
+) -> tuple[EvidenceGrade, ...]:
+    affected_trial_ids = {
+        failure.trial_id
+        for failure in failures
+        if failure.stage == stage and failure.failure_type == failure_type
+    }
+    grades = {
+        diagnosis.evidence_grade
+        for diagnosis in diagnoses
+        if affected_trial_ids.intersection(diagnosis.affected_trial_ids)
+        and _diagnosis_matches_failure_type(diagnosis, failure_type)
+    }
+    return tuple(sorted(grades, key=lambda grade: grade.value))
+
+
+def _diagnosis_matches_failure_type(diagnosis: Diagnosis, failure_type: str) -> bool:
+    return diagnosis.id.lower().startswith(failure_type.lower())
+
+
+def _format_cluster_line(cluster: FailureClusterSummary, include_stage: bool) -> str:
+    prefix = f"{cluster.stage.value}/{cluster.failure_type}" if include_stage else cluster.failure_type
+    parts = [f"- {prefix}: {cluster.affected_trials}"]
+    if cluster.diagnosis_ids:
+        parts.append(f"diagnoses={','.join(cluster.diagnosis_ids)}")
+    if cluster.evidence_grades:
+        parts.append(f"grades={','.join(grade.value for grade in cluster.evidence_grades)}")
+    return " ".join(parts)
