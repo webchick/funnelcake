@@ -41,6 +41,7 @@ PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src
 python3 -m pip install -e '.[phoenix]'
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli send-phoenix artifacts/runs/FC-0001
 PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli validate-task fixtures/tasks/setup-auth-discovery.json
+PYTHONPATH=apps/cli/src:packages/platform-profile/src:packages/signal-mining/src:packages/intent-extraction/src:packages/benchmark-builder/src:packages/discover-eval/src:packages/reporting/src:shared python3 -m funnelcake_cli run-task fixtures/tasks/setup-auth-discovery.json
 ```
 
 See [specs/opentelemetry.md](specs/opentelemetry.md) for Phoenix and OTLP notes.

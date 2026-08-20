@@ -10,6 +10,7 @@ from funnelcake_discover_eval import (
     format_trial_run,
     load_trial_run,
     load_trial_run_artifact,
+    run_task_spec,
     send_run_to_phoenix,
     write_otlp_json,
     write_trial_run,
@@ -78,6 +79,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Validate and print a benchmark task spec.",
     )
     validate_task.add_argument("path", help="Path to a benchmark task JSON spec.")
+
+    run_task = subparsers.add_parser(
+        "run-task",
+        help="Create a placeholder captured run from a benchmark task spec.",
+    )
+    run_task.add_argument("path", help="Path to a benchmark task JSON spec.")
+    run_task.add_argument(
+        "--artifacts-dir",
+        default="artifacts",
+        help="Directory where normalized run artifacts should be written.",
+    )
+    run_task.add_argument(
+        "--agent",
+        default="manual-placeholder",
+        help="Agent or harness name to record on the trial.",
+    )
     return parser
 
 
@@ -197,6 +214,19 @@ def validate_task(path: str) -> str:
     return format_task_spec(load_task_spec(path))
 
 
+def run_task(path: str, artifacts_dir: str, agent: str) -> str:
+    run, output_dir = run_task_spec(path, artifacts_dir=artifacts_dir, agent=agent)
+    return "\n".join(
+        [
+            f"trial={run.trial.id}",
+            f"trace_id={run.trial.trace_id}",
+            f"status={run.trial.status.value}",
+            f"final_state_passed={run.final_state.passed}",
+            f"output_dir={output_dir}",
+        ]
+    )
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -215,3 +245,5 @@ def main() -> None:
         print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
     elif args.command == "validate-task":
         print(validate_task(args.path))
+    elif args.command == "run-task":
+        print(run_task(args.path, args.artifacts_dir, args.agent))
