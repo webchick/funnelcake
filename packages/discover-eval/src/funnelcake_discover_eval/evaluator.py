@@ -44,6 +44,43 @@ def evaluate_task_run(
     return evaluate_run(task, run)
 
 
+def load_run_evaluation(path: str | Path) -> RunEvaluation:
+    with Path(path).open(encoding="utf-8") as evaluation_file:
+        raw = json.load(evaluation_file)
+
+    return RunEvaluation(
+        task_id=raw["task_id"],
+        trial_id=raw["trial_id"],
+        passed=raw["passed"],
+        final_state_passed=raw["final_state_passed"],
+        checkpoints=tuple(
+            CheckpointEvaluation(
+                checkpoint_id=checkpoint["checkpoint_id"],
+                passed=checkpoint["passed"],
+                required=checkpoint["required"],
+                assertions=tuple(
+                    AssertionEvaluation(
+                        assertion_id=assertion["assertion_id"],
+                        passed=assertion["passed"],
+                        required=assertion["required"],
+                        evidence=tuple(
+                            EvidenceRef(
+                                trace_id=ref["trace_id"],
+                                span_id=ref.get("span_id"),
+                                event_id=ref.get("event_id"),
+                                source_url=ref.get("source_url"),
+                            )
+                            for ref in assertion.get("evidence", [])
+                        ),
+                    )
+                    for assertion in checkpoint.get("assertions", [])
+                ),
+            )
+            for checkpoint in raw.get("checkpoints", [])
+        ),
+    )
+
+
 def write_run_evaluation(
     evaluation: RunEvaluation,
     run_path: str | Path,

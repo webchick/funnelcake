@@ -7,7 +7,9 @@ from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_t
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
     PhoenixDependencyError,
+    diagnose_task_run,
     evaluate_task_run,
+    format_diagnosis_bundle,
     format_trial_run,
     format_run_evaluation,
     load_trial_run,
@@ -15,6 +17,7 @@ from funnelcake_discover_eval import (
     load_trial_runs_dir,
     run_task_spec,
     send_run_to_phoenix,
+    write_diagnosis_bundle,
     write_otlp_json,
     write_run_evaluation,
     write_trial_run,
@@ -136,6 +139,26 @@ def build_parser() -> argparse.ArgumentParser:
         "--out",
         help="Path for evaluation JSON output. Implies --write.",
     )
+
+    diagnose_run = subparsers.add_parser(
+        "diagnose-run",
+        help="Create conservative diagnoses from a task spec, run, and optional evaluation.",
+    )
+    diagnose_run.add_argument("task_path", help="Path to a benchmark task JSON spec.")
+    diagnose_run.add_argument("run_path", help="Path to a run artifact directory or run.json.")
+    diagnose_run.add_argument(
+        "--evaluation",
+        help="Path to evaluation.json. Defaults to <run-dir>/evaluation.json when present.",
+    )
+    diagnose_run.add_argument(
+        "--write",
+        action="store_true",
+        help="Write diagnosis.json next to the run artifact.",
+    )
+    diagnose_run.add_argument(
+        "--out",
+        help="Path for diagnosis JSON output. Implies --write.",
+    )
     return parser
 
 
@@ -197,12 +220,14 @@ def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
 
     overview = build_dashboard_from_trial_runs(runs, eligible_count=eligible_count)
     evaluation_count = len(list(Path(runs_dir).glob("*/evaluation.json")))
+    diagnosis_count = len(list(Path(runs_dir).glob("*/diagnosis.json")))
     return "\n".join(
         [
             format_dashboard_overview(overview),
             "",
-            "Evaluations",
-            f"written={evaluation_count}/{len(runs)}",
+            "Artifacts",
+            f"evaluations={evaluation_count}/{len(runs)}",
+            f"diagnoses={diagnosis_count}/{len(runs)}",
         ]
     )
 
@@ -299,6 +324,21 @@ def evaluate_run_command(
     return "\n".join(lines)
 
 
+def diagnose_run_command(
+    task_path: str,
+    run_path: str,
+    evaluation_path: str | None,
+    write: bool,
+    output_path: str | None,
+) -> str:
+    bundle = diagnose_task_run(task_path, run_path, evaluation_path)
+    lines = [format_diagnosis_bundle(bundle)]
+    if write or output_path is not None:
+        written_path = write_diagnosis_bundle(bundle, run_path, output_path)
+        lines.extend(["", f"output_path={written_path}"])
+    return "\n".join(lines)
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -323,3 +363,13 @@ def main() -> None:
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":
         print(evaluate_run_command(args.task_path, args.run_path, args.write, args.out))
+    elif args.command == "diagnose-run":
+        print(
+            diagnose_run_command(
+                args.task_path,
+                args.run_path,
+                args.evaluation,
+                args.write,
+                args.out,
+            )
+        )

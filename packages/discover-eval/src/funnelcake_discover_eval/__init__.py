@@ -13,7 +13,15 @@ from .evaluator import (
     evaluate_run,
     evaluate_task_run,
     format_run_evaluation,
+    load_run_evaluation,
     write_run_evaluation,
+)
+from .diagnosis import (
+    DiagnosisBundle,
+    diagnose_run,
+    diagnose_task_run,
+    format_diagnosis_bundle,
+    write_diagnosis_bundle,
 )
 from .models import DiscoveryEvalPlan, DiscoveryEvalResult
 from .otlp import trial_run_to_otlp_json, write_otlp_json
@@ -26,12 +34,17 @@ __all__ = [
     "PhoenixDependencyError",
     "AssertionEvaluation",
     "CheckpointEvaluation",
+    "DiagnosisBundle",
     "RunEvaluation",
     "build_placeholder_trial_run",
+    "diagnose_run",
+    "diagnose_task_run",
     "evaluate_run",
     "evaluate_task_run",
+    "format_diagnosis_bundle",
     "format_trial_run",
     "format_run_evaluation",
+    "load_run_evaluation",
     "load_trial_run",
     "load_trial_run_artifact",
     "load_trial_runs_dir",
@@ -41,6 +54,7 @@ __all__ = [
     "trial_run_to_otlp_protobuf",
     "validate_trial_run",
     "write_otlp_json",
+    "write_diagnosis_bundle",
     "write_run_evaluation",
     "write_trial_run",
 ]
