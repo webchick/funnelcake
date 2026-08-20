@@ -7,7 +7,9 @@ from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_t
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
     PhoenixDependencyError,
+    evaluate_task_run,
     format_trial_run,
+    format_run_evaluation,
     load_trial_run,
     load_trial_run_artifact,
     load_trial_runs_dir,
@@ -117,6 +119,13 @@ def build_parser() -> argparse.ArgumentParser:
         default="manual-placeholder",
         help="Agent or harness name to record on the trial.",
     )
+
+    evaluate_run = subparsers.add_parser(
+        "evaluate-run",
+        help="Evaluate a captured run against a benchmark task spec.",
+    )
+    evaluate_run.add_argument("task_path", help="Path to a benchmark task JSON spec.")
+    evaluate_run.add_argument("run_path", help="Path to a run artifact directory or run.json.")
     return parser
 
 
@@ -258,6 +267,10 @@ def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     )
 
 
+def evaluate_run_command(task_path: str, run_path: str) -> str:
+    return format_run_evaluation(evaluate_task_run(task_path, run_path))
+
+
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
@@ -280,3 +293,5 @@ def main() -> None:
         print(validate_task(args.path))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
+    elif args.command == "evaluate-run":
+        print(evaluate_run_command(args.task_path, args.run_path))
