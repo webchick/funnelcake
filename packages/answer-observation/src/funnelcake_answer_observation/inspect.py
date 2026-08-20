@@ -51,6 +51,78 @@ def format_observation_detail(
     return "\n".join(lines)
 
 
+def format_product_detail(
+    observation_set: ObservationSet,
+    product: str,
+) -> str:
+    product_id, product_name = _resolve_product(observation_set, product)
+    matching_observations = tuple(
+        observation
+        for observation in observation_set.observations
+        if _observation_mentions_product(observation, product_id, product_name)
+    )
+    recommended = tuple(
+        observation
+        for observation in matching_observations
+        if _observation_recommends_product(observation, product_id, product_name)
+    )
+
+    lines = [
+        f"Product {product_name}",
+        f"product_id={product_id or ''}",
+        f"set={observation_set.id}",
+        f"observations={len(matching_observations)}/{len(observation_set.observations)}",
+        f"recommended={len(recommended)}/{len(observation_set.observations)}",
+        "",
+        "Matching Observations",
+    ]
+    if not matching_observations:
+        lines.append("- none")
+        return "\n".join(lines)
+
+    for observation in matching_observations:
+        matching_mentions = tuple(
+            mention
+            for mention in observation.mentions
+            if _matches_product(mention.entity, mention.product_id, product_id, product_name)
+        )
+        lines.extend(
+            [
+                f"- {observation.id} prompt={observation.prompt_id} "
+                f"provider={observation.provider or observation.engine or ''} "
+                f"recommended={_observation_recommends_product(observation, product_id, product_name)}",
+                f"  prompt_text={observation.prompt}",
+            ]
+        )
+        for mention in matching_mentions:
+            detail = [f"  mention_role={mention.role}"]
+            if mention.rank is not None:
+                detail.append(f"rank={mention.rank}")
+            if mention.stance:
+                detail.append(f"stance={mention.stance}")
+            lines.append(" ".join(detail))
+
+        citations = tuple(
+            citation
+            for citation in observation.citations
+            if _matches_product(citation.entity, citation.product_id, product_id, product_name)
+        )
+        if citations:
+            lines.append("  citations:")
+            lines.extend(f"    {line}" for line in _format_citations_for_items(citations))
+
+        product_claims = tuple(
+            claim
+            for claim in observation.claims
+            if claim.entity is None or claim.entity == product_name or claim.entity == product_id
+        )
+        if product_claims:
+            lines.append("  claims:")
+            lines.extend(f"    {line}" for line in _format_claims_for_items(product_claims))
+
+    return "\n".join(lines)
+
+
 def _format_model(observation: AnswerObservation) -> str:
     if observation.model and observation.model_version:
         return f"{observation.model}@{observation.model_version}"
@@ -88,9 +160,12 @@ def _format_mentions(observation: AnswerObservation) -> list[str]:
 def _format_citations(observation: AnswerObservation) -> list[str]:
     if not observation.citations:
         return ["- none"]
+    return _format_citations_for_items(observation.citations)
 
+
+def _format_citations_for_items(citations) -> list[str]:
     lines = []
-    for citation in observation.citations:
+    for citation in citations:
         parts = [f"- {citation.url}"]
         if citation.domain:
             parts.append(f"domain={citation.domain}")
@@ -128,12 +203,59 @@ def _format_retrieved_sources(observation: AnswerObservation) -> list[str]:
 def _format_claims(observation: AnswerObservation) -> list[str]:
     if not observation.claims:
         return ["- none"]
+    return _format_claims_for_items(observation.claims)
 
+
+def _format_claims_for_items(claims) -> list[str]:
     lines = []
-    for claim in observation.claims:
+    for claim in claims:
         parts = [f"- {claim.text}", f"support={claim.support}"]
         if claim.entity:
             parts.append(f"entity={claim.entity}")
         lines.append(" ".join(parts))
         lines.extend(f"  source={source_url}" for source_url in claim.source_urls)
     return lines
+
+
+def _resolve_product(observation_set: ObservationSet, product: str) -> tuple[str | None, str]:
+    query = product.lower()
+    for candidate in observation_set.products:
+        names = {candidate.id.lower(), candidate.name.lower()}
+        names.update(alias.lower() for alias in candidate.aliases)
+        if query in names:
+            return candidate.id, candidate.name
+    return None, product
+
+
+def _observation_mentions_product(
+    observation: AnswerObservation,
+    product_id: str | None,
+    product_name: str,
+) -> bool:
+    return any(
+        _matches_product(mention.entity, mention.product_id, product_id, product_name)
+        for mention in observation.mentions
+    )
+
+
+def _observation_recommends_product(
+    observation: AnswerObservation,
+    product_id: str | None,
+    product_name: str,
+) -> bool:
+    return any(
+        _matches_product(mention.entity, mention.product_id, product_id, product_name)
+        and mention.role in {"recommended", "selected", "preferred"}
+        for mention in observation.mentions
+    )
+
+
+def _matches_product(
+    entity: str | None,
+    product_id: str | None,
+    expected_product_id: str | None,
+    expected_name: str,
+) -> bool:
+    if expected_product_id is not None and product_id == expected_product_id:
+        return True
+    return entity == expected_name

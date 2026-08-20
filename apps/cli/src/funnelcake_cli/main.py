@@ -8,6 +8,7 @@ from funnelcake_answer_observation import (
     format_observation_comparison,
     format_observation_detail,
     format_observation_summary,
+    format_product_detail,
     load_observation_set,
     summarize_observations,
 )
@@ -133,6 +134,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_observation.add_argument("path", help="Path to an answer observation JSON file.")
     inspect_observation.add_argument("observation_id", help="Observation ID to inspect.")
+
+    inspect_product = subparsers.add_parser(
+        "inspect-product",
+        help="Print all observations mentioning or recommending one AEO/GEO product.",
+    )
+    inspect_product.add_argument("path", help="Path to an answer observation JSON file.")
+    inspect_product.add_argument("product", help="Product ID, name, or alias to inspect.")
 
     compare_observations = subparsers.add_parser(
         "compare-observations",
@@ -385,6 +393,11 @@ def inspect_observation(path: str, observation_id: str) -> str:
     return format_observation_detail(observation_set, observation_id)
 
 
+def inspect_product(path: str, product: str) -> str:
+    observation_set = load_observation_set(path)
+    return format_product_detail(observation_set, product)
+
+
 def compare_observations(baseline_path: str, followup_path: str) -> str:
     baseline = load_observation_set(baseline_path)
     followup = load_observation_set(followup_path)
@@ -482,6 +495,8 @@ def main() -> None:
         print(observe_answers(args.path))
     elif args.command == "inspect-observation":
         print(inspect_observation(args.path, args.observation_id))
+    elif args.command == "inspect-product":
+        print(inspect_product(args.path, args.product))
     elif args.command == "compare-observations":
         print(compare_observations(args.baseline_path, args.followup_path))
     elif args.command == "run-task":

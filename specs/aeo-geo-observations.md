@@ -103,6 +103,17 @@ Inspection prints the prompt, raw answer, model/provider metadata, product
 mentions, citations, retrieved sources, extracted claims, and raw provider
 payload keys. This is the v0 mechanism for keeping metrics attached to evidence.
 
+Use `inspect-product` to drill from aggregate product visibility to every
+observation where that product appeared:
+
+```bash
+funnelcake inspect-product fixtures/geo/drupal-answers.json drupal
+```
+
+Product inspection accepts a product ID, name, or alias from the product
+registry and prints matching prompts, recommendation status, matching mentions,
+citations, and claims.
+
 ## Comparison
 
 Use `compare-observations` to compare two observation sets:
