@@ -1,3 +1,4 @@
+from .compare import compare_observation_sets, format_observation_comparison
 from .loader import load_observation_set, validate_observation_set
 from .inspect import format_observation_detail
 from .metrics import format_observation_summary, summarize_observations
@@ -7,6 +8,8 @@ from .models import (
     Claim,
     EntityMention,
     EntityVisibility,
+    EntityVisibilityChange,
+    ObservationComparison,
     ObservationSet,
     ObservationSummary,
     ProbePrompt,
@@ -20,11 +23,15 @@ __all__ = [
     "Claim",
     "EntityMention",
     "EntityVisibility",
+    "EntityVisibilityChange",
+    "ObservationComparison",
     "ObservationSet",
     "ObservationSummary",
     "ProbePrompt",
     "Product",
     "RetrievedSource",
+    "compare_observation_sets",
+    "format_observation_comparison",
     "format_observation_detail",
     "format_observation_summary",
     "load_observation_set",

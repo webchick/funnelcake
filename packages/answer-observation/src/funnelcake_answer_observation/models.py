@@ -143,3 +143,31 @@ class ObservationSummary:
     top_retrieved_domains: tuple[tuple[str, int], ...]
     top_claims: tuple[tuple[str, int], ...]
     recommendation_consistency: tuple[tuple[str, str, int, int, float], ...]
+
+
+@dataclass(frozen=True)
+class EntityVisibilityChange:
+    entity: str
+    display_name: str | None
+    before_mention_rate: float
+    after_mention_rate: float
+    mention_rate_change: float
+    before_recommended_rate: float
+    after_recommended_rate: float
+    recommended_rate_change: float
+    before_first_choice_rate: float
+    after_first_choice_rate: float
+    first_choice_rate_change: float
+    before_recommendation_share: float
+    after_recommendation_share: float
+    recommendation_share_change: float
+
+
+@dataclass(frozen=True)
+class ObservationComparison:
+    baseline_id: str
+    followup_id: str
+    subject_entity: str
+    baseline_response_count: int
+    followup_response_count: int
+    entity_changes: tuple[EntityVisibilityChange, ...]

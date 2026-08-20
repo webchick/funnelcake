@@ -11,8 +11,9 @@ trials.
    the outcome.
 3. Experiment: what changed between comparable observation sets.
 
-This package implements levels 1 and 2. Experiment comparison should build on
-these observation sets instead of using raw answer text directly.
+This package implements levels 1 and 2, plus a small level 3 comparison command.
+Experiment comparison should build on these observation sets instead of using
+raw answer text directly.
 
 ## Design Principles
 
@@ -101,6 +102,18 @@ funnelcake inspect-observation fixtures/geo/drupal-answers.json obs-001
 Inspection prints the prompt, raw answer, model/provider metadata, product
 mentions, citations, retrieved sources, extracted claims, and raw provider
 payload keys. This is the v0 mechanism for keeping metrics attached to evidence.
+
+## Comparison
+
+Use `compare-observations` to compare two observation sets:
+
+```bash
+funnelcake compare-observations baseline.json followup.json
+```
+
+Comparison reports percentage-point changes for visibility, recommendation
+rate, first-choice rate, and share of recommendation. It intentionally says
+these are observational deltas rather than causal claims.
 
 ## Deferred
 

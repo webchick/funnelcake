@@ -1,0 +1,268 @@
+{
+  "id": "drupal-cms-selection-followup",
+  "subject_entity": "Drupal",
+  "subject_product_id": "drupal",
+  "description": "Follow-up AEO/GEO answer observations after a hypothetical content change.",
+  "products": [
+    {
+      "id": "drupal",
+      "name": "Drupal",
+      "aliases": [
+        "Drupal CMS",
+        "Drupal 11",
+        "Drupal.org"
+      ]
+    },
+    {
+      "id": "wordpress",
+      "name": "WordPress",
+      "aliases": [
+        "WordPress CMS",
+        "WordPress.org"
+      ]
+    },
+    {
+      "id": "webflow",
+      "name": "Webflow",
+      "aliases": []
+    }
+  ],
+  "observations": [
+    {
+      "id": "obs-followup-001",
+      "prompt_id": "cms-enterprise-001",
+      "prompt": "What CMS should a large university use for many department websites?",
+      "engine": "chat",
+      "surface": "web",
+      "provider": "example",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "region": "us",
+      "language": "en",
+      "timestamp": "2026-08-21T03:30:00Z",
+      "run_number": 2,
+      "repetition": 1,
+      "raw_answer": "Drupal is the strongest fit for a large university because it supports multisite governance, complex permissions, multilingual content, and structured editorial workflows. WordPress remains a common option for simpler departmental sites.",
+      "raw_request": {
+        "prompt_id": "cms-enterprise-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
+      "mentions": [
+        {
+          "entity": "Drupal",
+          "product_id": "drupal",
+          "role": "recommended",
+          "rank": 1,
+          "stance": "strong_positive"
+        },
+        {
+          "entity": "WordPress",
+          "product_id": "wordpress",
+          "role": "alternative",
+          "rank": 2,
+          "stance": "neutral"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/case-study/higher-education",
+          "title": "Drupal higher education case studies",
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
+        },
+        {
+          "url": "https://www.drupal.org/docs/administering-a-drupal-site/multisite",
+          "title": "Drupal multisite documentation",
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://www.drupal.org/",
+          "title": "Drupal",
+          "domain": "drupal.org",
+          "rank": 1,
+          "entity": "Drupal",
+          "product_id": "drupal"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal supports multisite governance and multilingual content.",
+          "support": "cited",
+          "source_urls": [
+            "https://www.drupal.org/docs/administering-a-drupal-site/multisite"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obs-followup-002",
+      "prompt_id": "cms-marketing-001",
+      "prompt": "What CMS is easiest for a small marketing site?",
+      "engine": "chat",
+      "surface": "web",
+      "provider": "example",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "region": "us",
+      "language": "en",
+      "timestamp": "2026-08-21T03:31:00Z",
+      "run_number": 2,
+      "repetition": 1,
+      "raw_answer": "WordPress and Webflow remain easy choices for small marketing sites. Drupal is also worth considering when the marketing site may grow into a governed content platform.",
+      "raw_request": {
+        "prompt_id": "cms-marketing-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
+      "mentions": [
+        {
+          "entity": "WordPress",
+          "product_id": "wordpress",
+          "role": "recommended",
+          "rank": 1,
+          "stance": "positive"
+        },
+        {
+          "entity": "Webflow",
+          "product_id": "webflow",
+          "role": "recommended",
+          "rank": 2,
+          "stance": "positive"
+        },
+        {
+          "entity": "Drupal",
+          "product_id": "drupal",
+          "role": "recommended",
+          "rank": 3,
+          "stance": "positive"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/docs/user_guide/en/index.html",
+          "title": "Drupal User Guide",
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
+        },
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "domain": "wordpress.org",
+          "entity": "WordPress",
+          "product_id": "wordpress"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://www.drupal.org/docs/user_guide/en/index.html",
+          "title": "Drupal User Guide",
+          "domain": "drupal.org",
+          "rank": 1,
+          "entity": "Drupal",
+          "product_id": "drupal"
+        },
+        {
+          "url": "https://wordpress.org/",
+          "title": "WordPress",
+          "domain": "wordpress.org",
+          "rank": 2,
+          "entity": "WordPress",
+          "product_id": "wordpress"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal is worth considering when a marketing site may grow into a governed content platform.",
+          "support": "cited",
+          "source_urls": [
+            "https://www.drupal.org/docs/user_guide/en/index.html"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "obs-followup-003",
+      "prompt_id": "cms-government-001",
+      "prompt": "Which CMS should a government agency shortlist for accessibility and governance?",
+      "engine": "chat",
+      "surface": "web",
+      "provider": "example",
+      "model": "example-model",
+      "model_version": "2026-08",
+      "search_enabled": true,
+      "country": "US",
+      "region": "us",
+      "language": "en",
+      "timestamp": "2026-08-21T03:32:00Z",
+      "run_number": 2,
+      "repetition": 1,
+      "raw_answer": "Drupal should be the first CMS shortlisted for government agencies that need accessibility, governance, multilingual content, and public-sector content workflows. WordPress can be considered for simpler sites.",
+      "raw_request": {
+        "prompt_id": "cms-government-001"
+      },
+      "raw_response": {
+        "fixture": true
+      },
+      "mentions": [
+        {
+          "entity": "Drupal",
+          "product_id": "drupal",
+          "role": "recommended",
+          "rank": 1,
+          "stance": "strong_positive"
+        },
+        {
+          "entity": "WordPress",
+          "product_id": "wordpress",
+          "role": "alternative",
+          "rank": 2,
+          "stance": "neutral"
+        }
+      ],
+      "citations": [
+        {
+          "url": "https://www.drupal.org/industries/government",
+          "title": "Drupal for government",
+          "domain": "drupal.org",
+          "entity": "Drupal",
+          "product_id": "drupal"
+        }
+      ],
+      "retrieved_sources": [
+        {
+          "url": "https://www.drupal.org/industries/government",
+          "title": "Drupal for government",
+          "domain": "drupal.org",
+          "rank": 1,
+          "entity": "Drupal",
+          "product_id": "drupal"
+        }
+      ],
+      "claims": [
+        {
+          "entity": "Drupal",
+          "text": "Drupal should be shortlisted for accessibility, governance, multilingual content, and public-sector workflows.",
+          "support": "cited",
+          "source_urls": [
+            "https://www.drupal.org/industries/government"
+          ]
+        }
+      ]
+    }
+  ]
+}

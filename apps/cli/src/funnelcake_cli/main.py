@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 
 from funnelcake_answer_observation import (
+    compare_observation_sets,
+    format_observation_comparison,
     format_observation_detail,
     format_observation_summary,
     load_observation_set,
@@ -131,6 +133,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     inspect_observation.add_argument("path", help="Path to an answer observation JSON file.")
     inspect_observation.add_argument("observation_id", help="Observation ID to inspect.")
+
+    compare_observations = subparsers.add_parser(
+        "compare-observations",
+        help="Compare two AEO/GEO observation sets without making causal claims.",
+    )
+    compare_observations.add_argument("baseline_path", help="Path to the baseline observation JSON file.")
+    compare_observations.add_argument("followup_path", help="Path to the follow-up observation JSON file.")
 
     run_task = subparsers.add_parser(
         "run-task",
@@ -376,6 +385,12 @@ def inspect_observation(path: str, observation_id: str) -> str:
     return format_observation_detail(observation_set, observation_id)
 
 
+def compare_observations(baseline_path: str, followup_path: str) -> str:
+    baseline = load_observation_set(baseline_path)
+    followup = load_observation_set(followup_path)
+    return format_observation_comparison(compare_observation_sets(baseline, followup))
+
+
 def run_task(path: str, artifacts_dir: str, agent: str) -> str:
     run, output_dir = run_task_spec(path, artifacts_dir=artifacts_dir, agent=agent)
     return "\n".join(
@@ -467,6 +482,8 @@ def main() -> None:
         print(observe_answers(args.path))
     elif args.command == "inspect-observation":
         print(inspect_observation(args.path, args.observation_id))
+    elif args.command == "compare-observations":
+        print(compare_observations(args.baseline_path, args.followup_path))
     elif args.command == "run-task":
         print(run_task(args.path, args.artifacts_dir, args.agent))
     elif args.command == "evaluate-run":
