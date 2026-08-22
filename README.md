@@ -100,6 +100,7 @@ funnelcake collect promptfoo fixtures/collectors/promptfooconfig.yaml --raw-out 
 funnelcake filling snapshot artifacts/telemetry/posthog-ish.normalized.json --config fixtures/telemetry/filling-config.yaml --out artifacts/filling/baseline.json
 funnelcake filling snapshot artifacts/telemetry/posthog-ish-current.normalized.json --config fixtures/telemetry/filling-config-current.yaml --out artifacts/filling/current.json
 funnelcake filling compare artifacts/filling/baseline.json artifacts/filling/current.json
+funnelcake filling export-prometheus artifacts/filling/current.json --out artifacts/filling/current.prom
 funnelcake dashboard-summary --filling-snapshot artifacts/filling/current.json --compare-to artifacts/filling/baseline.json
 ```
 

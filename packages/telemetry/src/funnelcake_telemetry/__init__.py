@@ -21,6 +21,7 @@ from .normalize import (
     normalize_file,
     write_normalized_events,
 )
+from .prometheus import filling_snapshot_to_prometheus, write_prometheus_metrics
 from .snapshot import build_filling_snapshot, format_filling_snapshot, snapshot_to_dict
 from .snapshot import (
     compare_filling_snapshots,
@@ -57,6 +58,8 @@ __all__ = [
     "normalize_events",
     "normalize_file",
     "snapshot_to_dict",
+    "filling_snapshot_to_prometheus",
+    "write_prometheus_metrics",
     "write_normalized_events",
     "write_filling_snapshot",
 ]

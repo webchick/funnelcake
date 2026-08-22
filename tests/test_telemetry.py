@@ -16,6 +16,7 @@ from funnelcake_telemetry import (
     compare_filling_snapshots,
     calculate_transition,
     derive_stage_attainments,
+    filling_snapshot_to_prometheus,
     load_filling_snapshot,
     load_product_funnel_config,
     load_mapping,
@@ -104,6 +105,21 @@ class TelemetryTest(unittest.TestCase):
             transition.status_reason,
             "Selected observations cannot be joined to activated accounts.",
         )
+
+    def test_filling_snapshot_exports_prometheus_metrics(self) -> None:
+        raw_events = load_raw_events(REPO_ROOT / "fixtures/telemetry/posthog-ish-events.json")
+        mapping = load_mapping(REPO_ROOT / "fixtures/telemetry/posthog-ish-mapping.yaml")
+        config = load_product_funnel_config(REPO_ROOT / "fixtures/telemetry/filling-config.yaml")
+        events = normalize_events(raw_events, mapping, source="posthog_export")
+        snapshot = build_filling_snapshot(events, config)
+
+        metrics = filling_snapshot_to_prometheus(snapshot)
+
+        self.assertIn("# TYPE funnelcake_filling_stage_count gauge", metrics)
+        self.assertIn('funnelcake_filling_stage_count{stage="fit"', metrics)
+        self.assertIn('funnelcake_filling_transition_rate{transition="fit_to_investigate"', metrics)
+        self.assertIn("} 0.63", metrics)
+        self.assertNotIn('transition="land_to_launch",', metrics)
 
     def test_snapshot_round_trips_and_compares_status_aware_deltas(self) -> None:
         mapping = load_mapping(REPO_ROOT / "fixtures/telemetry/posthog-ish-mapping.yaml")

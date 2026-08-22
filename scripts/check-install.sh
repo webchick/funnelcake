@@ -20,4 +20,5 @@ export PIP_DISABLE_PIP_VERSION_CHECK=1
 "$venv_dir/bin/funnelcake" filling snapshot "$venv_dir/telemetry.normalized.json" --config fixtures/telemetry/filling-config.yaml --out "$venv_dir/filling-baseline.json"
 "$venv_dir/bin/funnelcake" filling snapshot "$venv_dir/telemetry-current.normalized.json" --config fixtures/telemetry/filling-config-current.yaml --out "$venv_dir/filling-current.json"
 "$venv_dir/bin/funnelcake" filling compare "$venv_dir/filling-baseline.json" "$venv_dir/filling-current.json"
+"$venv_dir/bin/funnelcake" filling export-prometheus "$venv_dir/filling-current.json" --out "$venv_dir/filling-current.prom"
 "$venv_dir/bin/funnelcake" dashboard-summary --filling-snapshot "$venv_dir/filling-current.json" --compare-to "$venv_dir/filling-baseline.json" --runs-dir "$venv_dir/missing-runs"

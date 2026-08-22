@@ -82,9 +82,14 @@ failure_stage = credentials
 Prometheus-compatible metrics are useful for aggregate reporting:
 
 ```text
-funnelcake_activation_rate{product="supabase", agent="claude"} 0.68
-funnelcake_human_intervention_rate{product="supabase"} 0.31
-funnelcake_time_to_first_value_seconds{product="supabase", quantile="0.5"} 184
+funnelcake_filling_stage_count{stage="launch", evidence_kind="derived"} 2
+funnelcake_filling_transition_rate{transition="launch_to_initial_value"} 0.5
+```
+
+Export saved FILLING snapshots in Prometheus text format:
+
+```bash
+funnelcake filling export-prometheus artifacts/filling/current.json --out artifacts/filling/current.prom
 ```
 
 Funnelcake should speak the observability ecosystem rather than replace it:

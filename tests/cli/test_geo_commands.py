@@ -349,6 +349,14 @@ class GeoCliTest(unittest.TestCase):
                 str(baseline_snapshot_path),
                 str(current_snapshot_path),
             )
+            prometheus_path = Path(temp_dir) / "filling.prom"
+            prometheus_result = self.run_cli(
+                "filling",
+                "export-prometheus",
+                str(current_snapshot_path),
+                "--out",
+                str(prometheus_path),
+            )
             dashboard_result = self.run_cli(
                 "dashboard-summary",
                 "--filling-snapshot",
@@ -360,6 +368,7 @@ class GeoCliTest(unittest.TestCase):
             )
             baseline_snapshot_exists = baseline_snapshot_path.exists()
             current_snapshot_exists = current_snapshot_path.exists()
+            prometheus_metrics = prometheus_path.read_text(encoding="utf-8") if prometheus_path.exists() else ""
 
         self.assertEqual(normalize_result.returncode, 0, normalize_result.stderr)
         self.assertIn("normalized_events=5", normalize_result.stdout)
@@ -382,6 +391,10 @@ class GeoCliTest(unittest.TestCase):
         self.assertIn("launch->initial_value", compare_result.stdout)
         self.assertIn("delta=-50.0pp", compare_result.stdout)
         self.assertIn("no delta for status incompatible_population", compare_result.stdout)
+        self.assertEqual(prometheus_result.returncode, 0, prometheus_result.stderr)
+        self.assertIn("prometheus_metrics=", prometheus_result.stdout)
+        self.assertIn("funnelcake_filling_stage_count", prometheus_metrics)
+        self.assertIn('funnelcake_filling_transition_rate{transition="launch_to_initial_value"', prometheus_metrics)
         self.assertEqual(dashboard_result.returncode, 0, dashboard_result.stderr)
         self.assertIn("Funnelcake product dashboard", dashboard_result.stdout)
         self.assertIn("FILLING snapshot", dashboard_result.stdout)

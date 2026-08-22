@@ -77,6 +77,7 @@ from funnelcake_telemetry import (
     build_filling_snapshot,
     compare_filling_snapshots,
     comparison_to_dict,
+    filling_snapshot_to_prometheus,
     format_filling_comparison,
     format_filling_snapshot,
     load_filling_snapshot,
@@ -84,6 +85,7 @@ from funnelcake_telemetry import (
     load_product_funnel_config,
     normalize_file,
     snapshot_to_dict,
+    write_prometheus_metrics,
     write_filling_snapshot,
     write_normalized_events,
 )
@@ -591,6 +593,16 @@ def build_parser() -> argparse.ArgumentParser:
         "--json",
         action="store_true",
         help="Print the comparison as machine-readable JSON.",
+    )
+
+    filling_prometheus = filling_subparsers.add_parser(
+        "export-prometheus",
+        help="Export a saved FILLING snapshot as Prometheus text metrics.",
+    )
+    filling_prometheus.add_argument("path", help="Path to a saved FILLING snapshot JSON artifact.")
+    filling_prometheus.add_argument(
+        "--out",
+        help="Path to write Prometheus text metrics.",
     )
 
     collect = subparsers.add_parser(
@@ -1237,6 +1249,8 @@ def filling_command(args: argparse.Namespace) -> str:
         return filling_snapshot_command(args.path, args.config, args.json, output_path=args.out)
     if args.filling_command == "compare":
         return filling_compare_command(args.baseline_path, args.current_path, args.json)
+    if args.filling_command == "export-prometheus":
+        return filling_prometheus_command(args.path, args.out)
     raise ValueError(f"unknown filling command: {args.filling_command}")
 
 
@@ -1285,6 +1299,14 @@ def filling_compare_command(
     if json_output:
         return json.dumps(comparison_to_dict(comparison), indent=2)
     return format_filling_comparison(comparison)
+
+
+def filling_prometheus_command(path: str, output_path: str | None) -> str:
+    metrics = filling_snapshot_to_prometheus(load_filling_snapshot(path))
+    if output_path is None:
+        return metrics.rstrip()
+    written_path = write_prometheus_metrics(metrics, output_path)
+    return f"prometheus_metrics={written_path}"
 
 
 def collect_command(args: argparse.Namespace) -> str:
