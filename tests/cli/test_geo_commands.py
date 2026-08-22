@@ -20,6 +20,8 @@ PYTHONPATH = ":".join(
         "packages/answer-observation/src",
         "packages/benchmark-builder/src",
         "packages/discover-eval/src",
+        "packages/telemetry/src",
+        "packages/collectors/src",
         "packages/reporting/src",
         "shared",
     ]
@@ -258,6 +260,242 @@ class GeoCliTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("PERPLEXITY_API_KEY is required", result.stderr)
+
+    def test_telemetry_normalize_and_inspect_fixture(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "normalized.json"
+            current_output_path = Path(temp_dir) / "normalized-current.json"
+            baseline_snapshot_path = Path(temp_dir) / "baseline-snapshot.json"
+            current_snapshot_path = Path(temp_dir) / "current-snapshot.json"
+            normalize_result = self.run_cli(
+                "telemetry",
+                "normalize",
+                "fixtures/telemetry/posthog-ish-events.json",
+                "--mapping",
+                "fixtures/telemetry/posthog-ish-mapping.yaml",
+                "--out",
+                str(output_path),
+            )
+            current_normalize_result = self.run_cli(
+                "telemetry",
+                "normalize",
+                "fixtures/telemetry/posthog-ish-events-current.json",
+                "--mapping",
+                "fixtures/telemetry/posthog-ish-mapping.yaml",
+                "--out",
+                str(current_output_path),
+            )
+            inspect_result = self.run_cli(
+                "telemetry",
+                "inspect",
+                str(output_path),
+            )
+            snapshot_result = self.run_cli(
+                "filling",
+                "snapshot",
+                str(output_path),
+                "--config",
+                "fixtures/telemetry/filling-config.yaml",
+            )
+            baseline_save_result = self.run_cli(
+                "filling",
+                "snapshot",
+                str(output_path),
+                "--config",
+                "fixtures/telemetry/filling-config.yaml",
+                "--out",
+                str(baseline_snapshot_path),
+            )
+            current_save_result = self.run_cli(
+                "filling",
+                "snapshot",
+                str(current_output_path),
+                "--config",
+                "fixtures/telemetry/filling-config-current.yaml",
+                "--out",
+                str(current_snapshot_path),
+            )
+            compare_result = self.run_cli(
+                "filling",
+                "compare",
+                str(baseline_snapshot_path),
+                str(current_snapshot_path),
+            )
+            dashboard_result = self.run_cli(
+                "dashboard-summary",
+                "--filling-snapshot",
+                str(current_snapshot_path),
+                "--compare-to",
+                str(baseline_snapshot_path),
+                "--runs-dir",
+                str(Path(temp_dir) / "missing-runs"),
+            )
+            baseline_snapshot_exists = baseline_snapshot_path.exists()
+            current_snapshot_exists = current_snapshot_path.exists()
+
+        self.assertEqual(normalize_result.returncode, 0, normalize_result.stderr)
+        self.assertIn("normalized_events=5", normalize_result.stdout)
+        self.assertEqual(current_normalize_result.returncode, 0, current_normalize_result.stderr)
+        self.assertIn("normalized_events=7", current_normalize_result.stdout)
+        self.assertEqual(inspect_result.returncode, 0, inspect_result.stderr)
+        self.assertIn("initial_value", inspect_result.stdout)
+        self.assertIn("next_value", inspect_result.stdout)
+        self.assertEqual(snapshot_result.returncode, 0, snapshot_result.stderr)
+        self.assertIn("fit: 1000 estimated", snapshot_result.stdout)
+        self.assertIn("land->launch", snapshot_result.stdout)
+        self.assertIn("status=incompatible_population", snapshot_result.stdout)
+        self.assertEqual(baseline_save_result.returncode, 0, baseline_save_result.stderr)
+        self.assertTrue(baseline_snapshot_exists)
+        self.assertEqual(current_save_result.returncode, 0, current_save_result.stderr)
+        self.assertTrue(current_snapshot_exists)
+        self.assertEqual(compare_result.returncode, 0, compare_result.stderr)
+        self.assertIn("fit->investigate", compare_result.stdout)
+        self.assertIn("delta=+2.0pp", compare_result.stdout)
+        self.assertIn("launch->initial_value", compare_result.stdout)
+        self.assertIn("delta=-50.0pp", compare_result.stdout)
+        self.assertIn("no delta for status incompatible_population", compare_result.stdout)
+        self.assertEqual(dashboard_result.returncode, 0, dashboard_result.stderr)
+        self.assertIn("Funnelcake product dashboard", dashboard_result.stdout)
+        self.assertIn("FILLING snapshot", dashboard_result.stdout)
+        self.assertIn("FILLING comparison", dashboard_result.stdout)
+        self.assertIn("No DESSERT diagnostic runs found", dashboard_result.stdout)
+
+    def test_collect_run_normalizes_mcp_inspector_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "mcp-observations.json"
+            result = self.run_cli(
+                "collect",
+                "run",
+                "--collector",
+                "mcp-inspector",
+                "fixtures/collectors/mcp-inspector-auth-failed.json",
+                "--out",
+                str(output_path),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("normalized_observations=2", result.stdout)
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["observations"][0]["provenance"]["collector"], "external.mcp_inspector")
+            self.assertEqual(payload["observations"][0]["journey_stage"], "launch")
+
+    def test_collect_inspect_reads_normalized_observations(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "geo-observations.json"
+            run_result = self.run_cli(
+                "collect",
+                "run",
+                "--collector",
+                "answer-observation",
+                "fixtures/geo/drupal-raw-collected.json",
+                "--out",
+                str(output_path),
+            )
+            self.assertEqual(run_result.returncode, 0, run_result.stderr)
+
+            inspect_result = self.run_cli("collect", "inspect", str(output_path), "--json")
+
+            self.assertEqual(inspect_result.returncode, 0, inspect_result.stderr)
+            payload = json.loads(inspect_result.stdout)
+            self.assertTrue(payload["observations"])
+            self.assertEqual(payload["observations"][0]["provenance"]["collector"], "native.answer_observation")
+
+    def test_collect_run_normalizes_promptfoo_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "promptfoo-observations.json"
+            result = self.run_cli(
+                "collect",
+                "run",
+                "--collector",
+                "promptfoo",
+                "fixtures/collectors/promptfoo-results.json",
+                "--out",
+                str(output_path),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("normalized_observations=2", result.stdout)
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["observations"][0]["provenance"]["collector"], "external.promptfoo")
+            self.assertEqual(payload["observations"][0]["signal"], "agent_eval_result")
+
+    def test_collect_mcp_inspector_runs_command_and_writes_raw_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_command = Path(temp_dir) / "fake-mcp-inspector"
+            fake_command.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env python3",
+                        "import json",
+                        "print(json.dumps({'result': {'tools': [{'name': 'one'}, {'name': 'two'}]}}))",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            fake_command.chmod(0o755)
+            raw_output_path = Path(temp_dir) / "mcp-raw.json"
+            output_path = Path(temp_dir) / "mcp-observations.json"
+
+            result = self.run_cli(
+                "collect",
+                "mcp-inspector",
+                "https://example.com/mcp",
+                "--command",
+                str(fake_command),
+                "--raw-out",
+                str(raw_output_path),
+                "--out",
+                str(output_path),
+            )
+            raw_output_exists = raw_output_path.exists()
+            payload = json.loads(output_path.read_text(encoding="utf-8")) if output_path.exists() else {}
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(raw_output_exists)
+        self.assertIn("normalized_observations=2", result.stdout)
+        self.assertEqual(payload["observations"][0]["provenance"]["collector"], "external.mcp_inspector")
+        self.assertTrue(payload["observations"][0]["success"])
+        self.assertEqual(payload["observations"][1]["value"]["tools_discovered"], 2)
+
+    def test_collect_promptfoo_runs_command_and_writes_raw_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            fake_command = Path(temp_dir) / "fake-promptfoo"
+            fake_command.write_text(
+                "\n".join(
+                    [
+                        "#!/usr/bin/env python3",
+                        "import json, pathlib, sys",
+                        "output = pathlib.Path(sys.argv[sys.argv.index('--output') + 1])",
+                        "output.parent.mkdir(parents=True, exist_ok=True)",
+                        "output.write_text(json.dumps({'version': 3, 'results': {'outputs': [{'success': True, 'score': 0.9}]}}))",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            fake_command.chmod(0o755)
+            raw_output_path = Path(temp_dir) / "promptfoo-raw.json"
+            output_path = Path(temp_dir) / "promptfoo-observations.json"
+
+            result = self.run_cli(
+                "collect",
+                "promptfoo",
+                "fixtures/collectors/promptfooconfig.yaml",
+                "--command",
+                str(fake_command),
+                "--raw-out",
+                str(raw_output_path),
+                "--out",
+                str(output_path),
+            )
+            raw_output_exists = raw_output_path.exists()
+            payload = json.loads(output_path.read_text(encoding="utf-8")) if output_path.exists() else {}
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue(raw_output_exists)
+        self.assertIn("normalized_observations=1", result.stdout)
+        self.assertEqual(payload["observations"][0]["provenance"]["collector"], "external.promptfoo")
+        self.assertEqual(payload["observations"][0]["journey_stage"], "initial_value")
+        self.assertTrue(payload["observations"][0]["success"])
 
 
 if __name__ == "__main__":

@@ -28,6 +28,17 @@ from funnelcake_answer_observation import (
     write_observation_set,
 )
 from funnelcake_benchmark_builder import BenchmarkSpec, format_task_spec, load_task_spec
+from funnelcake_collectors import (
+    CollectorCapability,
+    Experiment,
+    MCPInspectorCollector,
+    PromptfooCollector,
+    format_observations,
+    get_collector,
+    load_observations,
+    observations_to_dict,
+    write_observations,
+)
 from funnelcake_discover_eval import (
     DiscoveryEvalPlan,
     PhoenixDependencyError,
@@ -61,6 +72,20 @@ from funnelcake_reporting import (
     load_dashboard_fixture,
 )
 from funnelcake_signal_mining import SignalSet
+from funnelcake_telemetry import (
+    build_filling_snapshot,
+    compare_filling_snapshots,
+    comparison_to_dict,
+    format_filling_comparison,
+    format_filling_snapshot,
+    load_filling_snapshot,
+    load_normalized_events,
+    load_product_funnel_config,
+    normalize_file,
+    snapshot_to_dict,
+    write_filling_snapshot,
+    write_normalized_events,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -82,6 +107,14 @@ def build_parser() -> argparse.ArgumentParser:
         "--eligible-count",
         type=int,
         help="Eligible intent count to use for conversion math.",
+    )
+    dashboard_summary.add_argument(
+        "--filling-snapshot",
+        help="Path to a saved FILLING snapshot JSON artifact for the product-facing dashboard.",
+    )
+    dashboard_summary.add_argument(
+        "--compare-to",
+        help="Optional baseline FILLING snapshot JSON to compare against --filling-snapshot.",
     )
 
     capture_run = subparsers.add_parser(
@@ -453,6 +486,212 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the comparison as machine-readable JSON.",
     )
 
+    telemetry = subparsers.add_parser(
+        "telemetry",
+        help="Grouped canonical telemetry commands.",
+    )
+    telemetry_subparsers = telemetry.add_subparsers(dest="telemetry_command", required=True)
+
+    telemetry_normalize = telemetry_subparsers.add_parser(
+        "normalize",
+        help="Map JSON/JSONL product events into canonical Funnelcake telemetry.",
+    )
+    telemetry_normalize.add_argument("path", help="Path to raw JSON or JSONL events.")
+    telemetry_normalize.add_argument(
+        "--mapping",
+        required=True,
+        help="Path to the telemetry mapping YAML file.",
+    )
+    telemetry_normalize.add_argument(
+        "--out",
+        required=True,
+        help="Path for normalized telemetry JSON output.",
+    )
+    telemetry_normalize.add_argument(
+        "--source",
+        default="generic_json",
+        help="Source label to attach to normalized telemetry.",
+    )
+
+    telemetry_inspect = telemetry_subparsers.add_parser(
+        "inspect",
+        help="Inspect canonical telemetry and derived FILLING attainments.",
+    )
+    telemetry_inspect.add_argument("path", help="Path to normalized telemetry JSON.")
+    telemetry_inspect.add_argument(
+        "--return-interval-days",
+        type=int,
+        default=7,
+        help="Return interval for deriving NEXT_VALUE.",
+    )
+    telemetry_inspect.add_argument(
+        "--config",
+        help="Path to a FILLING product config YAML file.",
+    )
+    telemetry_inspect.add_argument(
+        "--json",
+        action="store_true",
+        help="Print inspection results as machine-readable JSON.",
+    )
+
+    filling = subparsers.add_parser(
+        "filling",
+        help="Grouped FILLING product-funnel commands.",
+    )
+    filling_subparsers = filling.add_subparsers(dest="filling_command", required=True)
+
+    filling_snapshot = filling_subparsers.add_parser(
+        "snapshot",
+        help="Calculate a FILLING snapshot from normalized telemetry.",
+    )
+    filling_snapshot.add_argument("path", help="Path to normalized telemetry JSON.")
+    filling_snapshot.add_argument(
+        "--config",
+        help="Path to a FILLING product config YAML file.",
+    )
+    filling_snapshot.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the snapshot as machine-readable JSON.",
+    )
+    filling_snapshot.add_argument(
+        "--out",
+        help="Path to write the snapshot JSON artifact.",
+    )
+
+    filling_compare = filling_subparsers.add_parser(
+        "compare",
+        help="Compare two saved FILLING snapshot JSON artifacts.",
+    )
+    filling_compare.add_argument("baseline_path", help="Path to the baseline snapshot JSON.")
+    filling_compare.add_argument("current_path", help="Path to the current snapshot JSON.")
+    filling_compare.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the comparison as machine-readable JSON.",
+    )
+
+    collect = subparsers.add_parser(
+        "collect",
+        help="Grouped normalized evidence collector commands.",
+    )
+    collect_subparsers = collect.add_subparsers(dest="collect_command", required=True)
+
+    collect_run = collect_subparsers.add_parser(
+        "run",
+        help="Normalize evidence from a native or external collector artifact.",
+    )
+    collect_run.add_argument("path", help="Path to the collector input artifact.")
+    collect_run.add_argument(
+        "--collector",
+        required=True,
+        help="Collector id or alias, e.g. answer-observation or mcp-inspector.",
+    )
+    collect_run.add_argument(
+        "--capability",
+        help="Collector capability. Defaults from --collector when omitted.",
+    )
+    collect_run.add_argument(
+        "--experiment-id",
+        help="Experiment id to attach to normalized observations. Defaults to the input stem.",
+    )
+    collect_run.add_argument("--task-id", help="Optional task id to attach to observations.")
+    collect_run.add_argument("--actor", help="Optional actor label to attach to observations.")
+    collect_run.add_argument(
+        "--json",
+        action="store_true",
+        help="Print normalized observations as machine-readable JSON.",
+    )
+    collect_run.add_argument(
+        "--out",
+        help="Path to write normalized observations JSON.",
+    )
+
+    collect_inspect = collect_subparsers.add_parser(
+        "inspect",
+        help="Print normalized collector observations.",
+    )
+    collect_inspect.add_argument("path", help="Path to normalized observations JSON.")
+    collect_inspect.add_argument(
+        "--json",
+        action="store_true",
+        help="Print normalized observations as machine-readable JSON.",
+    )
+
+    collect_mcp = collect_subparsers.add_parser(
+        "mcp-inspector",
+        help="Run MCP Inspector and normalize its JSON result.",
+    )
+    collect_mcp.add_argument("server", help="MCP server command or URL to inspect.")
+    collect_mcp.add_argument(
+        "--method",
+        default="tools/list",
+        help="MCP method to inspect, default: tools/list.",
+    )
+    collect_mcp.add_argument("--tool-name", help="Tool name for methods that require one.")
+    collect_mcp.add_argument(
+        "--command",
+        dest="executable",
+        default="mcp-inspector",
+        help="MCP Inspector executable name or path.",
+    )
+    collect_mcp.add_argument(
+        "--raw-out",
+        help="Optional path to save raw MCP Inspector JSON output.",
+    )
+    collect_mcp.add_argument(
+        "--experiment-id",
+        help="Experiment id to attach to normalized observations. Defaults from server/method.",
+    )
+    collect_mcp.add_argument("--task-id", help="Optional task id to attach to observations.")
+    collect_mcp.add_argument("--actor", help="Optional actor label to attach to observations.")
+    collect_mcp.add_argument(
+        "--json",
+        action="store_true",
+        help="Print normalized observations as machine-readable JSON.",
+    )
+    collect_mcp.add_argument(
+        "--out",
+        help="Path to write normalized observations JSON.",
+    )
+
+    collect_promptfoo = collect_subparsers.add_parser(
+        "promptfoo",
+        help="Run Promptfoo and normalize its JSON eval results.",
+    )
+    collect_promptfoo.add_argument("config", help="Path to a Promptfoo config file.")
+    collect_promptfoo.add_argument(
+        "--command",
+        dest="executable",
+        default="promptfoo",
+        help="Promptfoo executable name or path.",
+    )
+    collect_promptfoo.add_argument(
+        "--raw-out",
+        required=True,
+        help="Path to save raw Promptfoo JSON results.",
+    )
+    collect_promptfoo.add_argument(
+        "--experiment-id",
+        help="Experiment id to attach to normalized observations. Defaults to config stem.",
+    )
+    collect_promptfoo.add_argument("--task-id", help="Optional task id to attach to observations.")
+    collect_promptfoo.add_argument("--actor", help="Optional actor label to attach to observations.")
+    collect_promptfoo.add_argument(
+        "--journey-stage",
+        default="initial_value",
+        help="FILLING stage to attach to Promptfoo observations. Default: initial_value.",
+    )
+    collect_promptfoo.add_argument(
+        "--json",
+        action="store_true",
+        help="Print normalized observations as machine-readable JSON.",
+    )
+    collect_promptfoo.add_argument(
+        "--out",
+        help="Path to write normalized observations JSON.",
+    )
+
     run_task = subparsers.add_parser(
         "run-task",
         help="Create a placeholder captured run from a benchmark task spec.",
@@ -593,9 +832,28 @@ def dashboard_demo() -> str:
     return "\n".join(lines)
 
 
-def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
+def dashboard_summary(
+    runs_dir: str,
+    eligible_count: int | None,
+    filling_snapshot_path: str | None = None,
+    compare_to_path: str | None = None,
+) -> str:
+    sections = []
+    if filling_snapshot_path is not None:
+        current_snapshot = load_filling_snapshot(filling_snapshot_path)
+        sections.extend(["Funnelcake product dashboard", format_filling_snapshot(current_snapshot)])
+        if compare_to_path is not None:
+            comparison = compare_filling_snapshots(
+                load_filling_snapshot(compare_to_path),
+                current_snapshot,
+            )
+            sections.append(format_filling_comparison(comparison))
+
     runs = load_trial_runs_dir(runs_dir)
     if not runs:
+        if sections:
+            sections.append(f"No DESSERT diagnostic runs found in {runs_dir}")
+            return "\n\n".join(sections)
         return f"No runs found in {runs_dir}"
 
     diagnosis_bundles = load_diagnosis_bundles_dir(runs_dir)
@@ -611,15 +869,18 @@ def dashboard_summary(runs_dir: str, eligible_count: int | None) -> str:
     )
     evaluation_count = len(list(Path(runs_dir).glob("*/evaluation.json")))
     diagnosis_count = len(diagnosis_bundles)
-    return "\n".join(
-        [
-            format_dashboard_overview(overview),
-            "",
-            "Artifacts",
-            f"evaluations={evaluation_count}/{len(runs)}",
-            f"diagnoses={diagnosis_count}/{len(runs)}",
-        ]
+    sections.append(
+        "\n".join(
+            [
+                format_dashboard_overview(overview),
+                "",
+                "Artifacts",
+                f"evaluations={evaluation_count}/{len(runs)}",
+                f"diagnoses={diagnosis_count}/{len(runs)}",
+            ]
+        )
     )
+    return "\n\n".join(sections)
 
 
 def capture_run(path: str, artifacts_dir: str) -> str:
@@ -893,6 +1154,250 @@ def geo_command(args: argparse.Namespace) -> str:
     raise ValueError(f"unknown geo command: {args.geo_command}")
 
 
+def telemetry_command(args: argparse.Namespace) -> str:
+    if args.telemetry_command == "normalize":
+        events = normalize_file(args.path, args.mapping, source=args.source)
+        output_path = write_normalized_events(events, args.out)
+        return "\n".join(
+            [
+                f"normalized_events={len(events)}",
+                f"output_path={output_path}",
+            ]
+        )
+    if args.telemetry_command == "inspect":
+        return filling_snapshot_command(args.path, args.config, args.json, args.return_interval_days)
+    raise ValueError(f"unknown telemetry command: {args.telemetry_command}")
+
+
+def filling_command(args: argparse.Namespace) -> str:
+    if args.filling_command == "snapshot":
+        return filling_snapshot_command(args.path, args.config, args.json, output_path=args.out)
+    if args.filling_command == "compare":
+        return filling_compare_command(args.baseline_path, args.current_path, args.json)
+    raise ValueError(f"unknown filling command: {args.filling_command}")
+
+
+def filling_snapshot_command(
+    path: str,
+    config_path: str | None,
+    json_output: bool,
+    return_interval_days: int | None = None,
+    output_path: str | None = None,
+) -> str:
+    events = load_normalized_events(path)
+    config = load_product_funnel_config(config_path)
+    if return_interval_days is not None and config_path is None:
+        config = config.__class__(
+            entity_id_field=config.entity_id_field,
+            activation_events=config.activation_events,
+            value_events=config.value_events,
+            revenue_events=config.revenue_events,
+            value_task_families=config.value_task_families,
+            return_interval_days=return_interval_days,
+            estimated_stage_counts=config.estimated_stage_counts,
+            incompatible_transitions=config.incompatible_transitions,
+        )
+    snapshot = build_filling_snapshot(events, config)
+    written_path = write_filling_snapshot(snapshot, output_path) if output_path is not None else None
+    if json_output:
+        payload = snapshot_to_dict(snapshot)
+        if written_path is not None:
+            payload["output_path"] = str(written_path)
+        return json.dumps(payload, indent=2)
+    lines = [format_filling_snapshot(snapshot)]
+    if written_path is not None:
+        lines.extend(["", f"output_path={written_path}"])
+    return "\n".join(lines)
+
+
+def filling_compare_command(
+    baseline_path: str,
+    current_path: str,
+    json_output: bool,
+) -> str:
+    comparison = compare_filling_snapshots(
+        load_filling_snapshot(baseline_path),
+        load_filling_snapshot(current_path),
+    )
+    if json_output:
+        return json.dumps(comparison_to_dict(comparison), indent=2)
+    return format_filling_comparison(comparison)
+
+
+def collect_command(args: argparse.Namespace) -> str:
+    if args.collect_command == "run":
+        return collect_run_command(
+            args.collector,
+            args.path,
+            args.capability,
+            args.experiment_id,
+            args.task_id,
+            args.actor,
+            args.json,
+            args.out,
+        )
+    if args.collect_command == "inspect":
+        observations = load_observations(args.path)
+        if args.json:
+            return json.dumps(observations_to_dict(observations), indent=2)
+        return format_observations(observations)
+    if args.collect_command == "mcp-inspector":
+        return collect_mcp_inspector_command(
+            args.server,
+            args.method,
+            args.executable,
+            args.tool_name,
+            args.raw_out,
+            args.experiment_id,
+            args.task_id,
+            args.actor,
+            args.json,
+            args.out,
+        )
+    if args.collect_command == "promptfoo":
+        return collect_promptfoo_command(
+            args.config,
+            args.executable,
+            args.raw_out,
+            args.experiment_id,
+            args.task_id,
+            args.actor,
+            args.journey_stage,
+            args.json,
+            args.out,
+        )
+    raise ValueError(f"unknown collect command: {args.collect_command}")
+
+
+def collect_run_command(
+    collector_id: str,
+    path: str,
+    capability: str | None,
+    experiment_id: str | None,
+    task_id: str | None,
+    actor: str | None,
+    json_output: bool,
+    output_path: str | None,
+) -> str:
+    collector = get_collector(collector_id)
+    experiment = Experiment(
+        id=experiment_id or Path(path).stem,
+        capability=_collector_capability(collector_id, capability),
+        input_path=path,
+        task_id=task_id,
+        actor=actor,
+    )
+    observations = collector.collect(experiment)
+    written_path = write_observations(observations, output_path) if output_path is not None else None
+    if json_output:
+        payload = observations_to_dict(observations)
+        if written_path is not None:
+            payload["output_path"] = str(written_path)
+        return json.dumps(payload, indent=2)
+    lines = [format_observations(observations)]
+    if written_path is not None:
+        lines.extend(["", f"output_path={written_path}"])
+    return "\n".join(lines)
+
+
+def collect_mcp_inspector_command(
+    server: str,
+    method: str,
+    command: str,
+    tool_name: str | None,
+    raw_output_path: str | None,
+    experiment_id: str | None,
+    task_id: str | None,
+    actor: str | None,
+    json_output: bool,
+    output_path: str | None,
+) -> str:
+    collector = MCPInspectorCollector()
+    experiment = Experiment(
+        id=experiment_id or f"mcp-{_slug(server)}-{_slug(method)}",
+        capability=CollectorCapability.MCP_INSPECTION,
+        task_id=task_id,
+        actor=actor,
+    )
+    observations = collector.collect_from_server(
+        experiment,
+        server,
+        method=method,
+        command=command,
+        tool_name=tool_name,
+        raw_output_path=raw_output_path,
+    )
+    return _format_collect_output(observations, json_output, output_path)
+
+
+def collect_promptfoo_command(
+    config_path: str,
+    command: str,
+    raw_output_path: str,
+    experiment_id: str | None,
+    task_id: str | None,
+    actor: str | None,
+    journey_stage: str,
+    json_output: bool,
+    output_path: str | None,
+) -> str:
+    collector = PromptfooCollector()
+    experiment = Experiment(
+        id=experiment_id or Path(config_path).stem,
+        capability=CollectorCapability.AGENT_EVALUATION,
+        task_id=task_id,
+        actor=actor,
+        attributes={"journey_stage": journey_stage},
+    )
+    observations = collector.collect_from_config(
+        experiment,
+        config_path,
+        command=command,
+        raw_output_path=raw_output_path,
+    )
+    return _format_collect_output(observations, json_output, output_path)
+
+
+def _format_collect_output(
+    observations: tuple[object, ...],
+    json_output: bool,
+    output_path: str | None,
+) -> str:
+    written_path = write_observations(observations, output_path) if output_path is not None else None
+    if json_output:
+        payload = observations_to_dict(observations)
+        if written_path is not None:
+            payload["output_path"] = str(written_path)
+        return json.dumps(payload, indent=2)
+    lines = [format_observations(observations)]
+    if written_path is not None:
+        lines.extend(["", f"output_path={written_path}"])
+    return "\n".join(lines)
+
+
+def _collector_capability(collector_id: str, capability: str | None) -> CollectorCapability:
+    if capability is not None:
+        return CollectorCapability(capability)
+    aliases = {
+        "answer-observation": CollectorCapability.ANSWER_OBSERVATION,
+        "native-answer-observation": CollectorCapability.ANSWER_OBSERVATION,
+        "native.answer_observation": CollectorCapability.ANSWER_OBSERVATION,
+        "mcp-inspector": CollectorCapability.MCP_INSPECTION,
+        "external.mcp_inspector": CollectorCapability.MCP_INSPECTION,
+        "promptfoo": CollectorCapability.AGENT_EVALUATION,
+        "external.promptfoo": CollectorCapability.AGENT_EVALUATION,
+    }
+    try:
+        return aliases[collector_id]
+    except KeyError as exc:
+        raise ValueError(f"--capability is required for collector {collector_id!r}") from exc
+
+
+def _slug(value: str) -> str:
+    slug = "".join(character.lower() if character.isalnum() else "-" for character in value)
+    return "-".join(part for part in slug.split("-") if part)[:48] or "unknown"
+
+
 def format_json(value: object) -> str:
     return json.dumps(asdict(value), indent=2)
 
@@ -974,7 +1479,14 @@ def main() -> None:
         elif args.command == "dashboard-demo":
             print(dashboard_demo())
         elif args.command == "dashboard-summary":
-            print(dashboard_summary(args.runs_dir, args.eligible_count))
+            print(
+                dashboard_summary(
+                    args.runs_dir,
+                    args.eligible_count,
+                    args.filling_snapshot,
+                    args.compare_to,
+                )
+            )
         elif args.command == "capture-run":
             print(capture_run(args.path, args.artifacts_dir))
         elif args.command == "show-run":
@@ -1018,6 +1530,12 @@ def main() -> None:
                 print_observation_validation(args.path, args.json)
                 return
             print(geo_command(args))
+        elif args.command == "telemetry":
+            print(telemetry_command(args))
+        elif args.command == "filling":
+            print(filling_command(args))
+        elif args.command == "collect":
+            print(collect_command(args))
         elif args.command == "run-task":
             print(run_task(args.path, args.artifacts_dir, args.agent))
         elif args.command == "evaluate-run":

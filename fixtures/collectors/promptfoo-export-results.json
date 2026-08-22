@@ -1,0 +1,23 @@
+{
+  "evalId": "eval-example",
+  "results": {
+    "version": 3,
+    "timestamp": "2026-08-22T04:14:04.199Z",
+    "results": [
+      {
+        "promptIdx": 0,
+        "testIdx": 0,
+        "provider": {
+          "id": "echo"
+        },
+        "score": 1,
+        "success": true,
+        "gradingResult": {
+          "pass": true,
+          "score": 1,
+          "reason": "All assertions passed"
+        }
+      }
+    ]
+  }
+}

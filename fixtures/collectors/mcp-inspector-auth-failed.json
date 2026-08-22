@@ -1,0 +1,8 @@
+{
+  "server": "https://example.com/mcp",
+  "client": "mcp-inspector-cli",
+  "timestamp": "2026-07-15T10:12:00Z",
+  "tools_discovered": 14,
+  "auth_succeeded": false,
+  "error": "OAuth authorization required"
+}

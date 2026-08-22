@@ -1,0 +1,50 @@
+mappings:
+  - source_event: Account Created
+    funnelcake_event: account.created
+    fields:
+      id: id
+      timestamp: timestamp
+      user_id: user_id
+      account_id: properties.workspaceId
+
+  - source_event: Project Connected
+    funnelcake_event: setup.completed
+    fields:
+      id: id
+      timestamp: timestamp
+      user_id: user_id
+      account_id: properties.workspaceId
+    rules:
+      actor:
+        if:
+          field: properties.initiatedBy
+          exists: true
+        then: agent
+        else: human
+
+  - source_event: Deployment Succeeded
+    funnelcake_event: workload.completed
+    fields:
+      id: id
+      timestamp: timestamp
+      user_id: user_id
+      account_id: properties.workspaceId
+      workload_id: properties.deploymentId
+    constants:
+      task_family: deployment
+      outcome: success
+    rules:
+      actor:
+        if:
+          field: properties.initiatedBy
+          exists: true
+        then: agent
+        else: human
+
+  - source_event: Subscription Started
+    funnelcake_event: subscription.started
+    fields:
+      id: id
+      timestamp: timestamp
+      user_id: user_id
+      account_id: properties.workspaceId

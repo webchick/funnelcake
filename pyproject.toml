@@ -31,6 +31,8 @@ where = [
   "packages/answer-observation/src",
   "packages/benchmark-builder/src",
   "packages/discover-eval/src",
+  "packages/telemetry/src",
+  "packages/collectors/src",
   "packages/reporting/src",
   "shared",
 ]
@@ -44,6 +46,8 @@ pythonpath = [
   "packages/answer-observation/src",
   "packages/benchmark-builder/src",
   "packages/discover-eval/src",
+  "packages/telemetry/src",
+  "packages/collectors/src",
   "packages/reporting/src",
   "shared",
 ]

@@ -1,0 +1,27 @@
+filling:
+  entity_id_field: account_id
+
+  activation_events:
+    - setup.completed
+
+  value_events:
+    - workload.completed
+    - value.realized
+
+  revenue_events:
+    - subscription.started
+    - subscription.upgraded
+    - subscription.expanded
+
+  value_task_families:
+    - deployment
+
+  return_interval_days: 7
+
+  estimated_stage_counts:
+    fit: 1200
+    investigate: 780
+    land: 360
+
+  incompatible_transitions:
+    land_to_launch: Selected observations cannot be joined to activated accounts.

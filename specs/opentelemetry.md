@@ -9,6 +9,89 @@ Funnelcake artifacts preserve product/eval semantics.
 OTLP export provides interoperability with trace tools.
 ```
 
+OpenTelemetry is an important interoperability target, not the required
+Funnelcake input boundary. The boundary is:
+
+```text
+external evidence
+       ↓
+collector / adapter
+       ↓
+Funnelcake observation
+       ↓
+metrics + findings
+```
+
+That keeps Funnelcake able to consume evidence from OTel traces, Prometheus-like
+metrics, Promptfoo results, MCP Inspector output, browser runs, agent eval
+harnesses, and manual review without forcing all of those sources through the
+same wire format.
+
+## Data Layers
+
+Funnelcake should keep three related but distinct data layers:
+
+1. Observations: rich facts about individual experiments or pieces of external
+   evidence.
+2. Metrics: aggregations over observations, such as activation rate, human
+   intervention rate, or time to first value.
+3. Findings: interpretations backed by evidence, such as a credential
+   provisioning failure pattern with confidence and supporting observations.
+
+These layers do not need the same storage or wire format. A trace is a natural
+shape for experiment execution evidence. A Prometheus-style metric is a natural
+shape for aggregate time-series reporting. A Funnelcake finding needs richer
+evidence references, confidence, and interpretation fields.
+
+## Collector Boundary
+
+Collectors normalize external evidence into Funnelcake observations. Examples:
+
+- `OTelCollector`: imports traces, spans, logs, and span events.
+- `PrometheusCollector`: imports aggregate counters, gauges, and histograms.
+- `PromptfooCollector`: imports prompt/eval results.
+- `MCPInspectorCollector`: imports MCP server capability and auth findings.
+- `BrowserRunCollector`: imports browser task execution traces.
+- `AgentEvalCollector`: imports external agent benchmark runs.
+- `ManualCollector`: imports reviewed evidence from humans.
+
+Collectors are inputs. They should not dictate Funnelcake's internal growth
+model, metric definitions, or finding semantics.
+
+## Observability Roles
+
+Use OpenTelemetry for what happened during rich execution:
+
+```text
+TRACE agent onboarding attempt
+  SPAN discover docs
+  SPAN create account
+  SPAN retrieve credentials
+  SPAN create project
+```
+
+Then derive Funnelcake metrics and findings from that evidence:
+
+```text
+activation = false
+time_to_first_value = null
+human_intervention_required = true
+failure_stage = credentials
+```
+
+Prometheus-compatible metrics are useful for aggregate reporting:
+
+```text
+funnelcake_activation_rate{product="supabase", agent="claude"} 0.68
+funnelcake_human_intervention_rate{product="supabase"} 0.31
+funnelcake_time_to_first_value_seconds{product="supabase", quantile="0.5"} 184
+```
+
+Funnelcake should speak the observability ecosystem rather than replace it:
+OpenTelemetry and Phoenix/Jaeger/Tempo/Honeycomb help inspect execution
+evidence; Prometheus/Grafana/Datadog help inspect metric trends; Funnelcake owns
+the product-funnel interpretation and WHY drill-down.
+
 ## Trace Model
 
 Use OpenTelemetry terms for execution data:
@@ -84,7 +167,7 @@ However, Funnelcake should not make draft GenAI conventions required for core da
 
 Recommended policy:
 
-- Use core OpenTelemetry trace concepts as the hard requirement.
+- Use core OpenTelemetry trace concepts for trace-shaped execution evidence.
 - Use OpenTelemetry GenAI attributes for LLM, tool, retrieval, memory, and MCP spans when the mapping is clear.
 - Use OpenInference attributes for AI observability tools such as Phoenix when they improve trace rendering.
 - Keep Funnelcake outcome semantics under `funnelcake.*` so convention churn does not break captured trial evidence.

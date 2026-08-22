@@ -1,0 +1,18 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "tools": [
+      {
+        "name": "create_site",
+        "description": "Create a site"
+      },
+      {
+        "name": "deploy_site",
+        "description": "Deploy a site"
+      }
+    ]
+  },
+  "server": "https://example.com/mcp",
+  "exit_code": 0
+}

@@ -1,0 +1,10 @@
+description: Funnelcake collector smoke fixture
+prompts:
+  - "Complete the configured product task."
+providers:
+  - echo
+tests:
+  - vars: {}
+    assert:
+      - type: contains
+        value: "Complete"

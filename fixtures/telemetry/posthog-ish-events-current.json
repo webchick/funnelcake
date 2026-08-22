@@ -1,0 +1,74 @@
+{
+  "events": [
+    {
+      "id": "cur-001",
+      "event": "Account Created",
+      "timestamp": "2026-08-01T09:00:00Z",
+      "user_id": "u123",
+      "properties": {
+        "workspaceId": "acct_abc"
+      }
+    },
+    {
+      "id": "cur-002",
+      "event": "Project Connected",
+      "timestamp": "2026-08-01T09:10:00Z",
+      "user_id": "u123",
+      "properties": {
+        "workspaceId": "acct_abc",
+        "initiatedBy": "cursor"
+      }
+    },
+    {
+      "id": "cur-003",
+      "event": "Deployment Succeeded",
+      "timestamp": "2026-08-01T09:15:00Z",
+      "user_id": "u123",
+      "properties": {
+        "workspaceId": "acct_abc",
+        "deploymentId": "dep_101",
+        "initiatedBy": "cursor"
+      }
+    },
+    {
+      "id": "cur-004",
+      "event": "Deployment Succeeded",
+      "timestamp": "2026-08-05T10:00:00Z",
+      "user_id": "u123",
+      "properties": {
+        "workspaceId": "acct_abc",
+        "deploymentId": "dep_102",
+        "initiatedBy": "cursor"
+      }
+    },
+    {
+      "id": "cur-005",
+      "event": "Subscription Started",
+      "timestamp": "2026-08-07T12:00:00Z",
+      "user_id": "u123",
+      "properties": {
+        "workspaceId": "acct_abc",
+        "plan": "team"
+      }
+    },
+    {
+      "id": "cur-006",
+      "event": "Account Created",
+      "timestamp": "2026-08-03T11:00:00Z",
+      "user_id": "u456",
+      "properties": {
+        "workspaceId": "acct_def"
+      }
+    },
+    {
+      "id": "cur-007",
+      "event": "Project Connected",
+      "timestamp": "2026-08-03T11:15:00Z",
+      "user_id": "u456",
+      "properties": {
+        "workspaceId": "acct_def",
+        "initiatedBy": "cursor"
+      }
+    }
+  ]
+}

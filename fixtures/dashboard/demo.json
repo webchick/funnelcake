@@ -6,7 +6,7 @@
     {"stage": "select", "name": "score", "score": 61, "numerator": 3777, "denominator": 6192},
     {"stage": "setup", "name": "score", "score": 43, "numerator": 1624, "denominator": 3777},
     {"stage": "execute", "name": "score", "score": 78, "numerator": 1267, "denominator": 1624},
-    {"stage": "repeat", "name": "score", "score": 67, "numerator": 849, "denominator": 1267},
+    {"stage": "retain", "name": "score", "score": 67, "numerator": 849, "denominator": 1267},
     {"stage": "trust", "name": "score", "score": 58, "numerator": 492, "denominator": 849}
   ],
   "trials": [

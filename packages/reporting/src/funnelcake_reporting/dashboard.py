@@ -4,6 +4,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 from funnelcake_shared import (
+    DESSERT_DIAGNOSTIC_METRIC_BY_STAGE,
     DessertStage,
     Diagnosis,
     EvidenceGrade,
@@ -19,7 +20,7 @@ STAGE_ORDER = (
     DessertStage.SELECT,
     DessertStage.SETUP,
     DessertStage.EXECUTE,
-    DessertStage.REPEAT,
+    DessertStage.RETAIN,
     DessertStage.TRUST,
 )
 
@@ -29,6 +30,8 @@ class StageScore:
     stage: DessertStage
     score: float
     trial_count: int
+    metric_id: str | None = None
+    label: str | None = None
     evidence_quality: str | None = None
 
 
@@ -78,6 +81,8 @@ def build_stage_scores(
             stage=stage,
             score=primary_scores.get(stage, 0.0),
             trial_count=trial_counts.get(stage, 0),
+            metric_id=DESSERT_DIAGNOSTIC_METRIC_BY_STAGE[stage].id,
+            label=DESSERT_DIAGNOSTIC_METRIC_BY_STAGE[stage].label,
         )
         for stage in STAGE_ORDER
     )
@@ -185,7 +190,7 @@ def build_dashboard_overview(
 
     return DashboardOverview(
         stage_scores=build_stage_scores(trials, metrics),
-        conversion=build_conversion(metrics, eligible_count),
+        conversion=(),
         biggest_leak=find_biggest_leak(trials, failures, clusters),
         top_failure_clusters=clusters[:3],
     )
@@ -236,11 +241,13 @@ def build_stage_metrics_from_runs(runs: tuple[TrialRun, ...]) -> tuple[StageMetr
 
 
 def format_dashboard_overview(overview: DashboardOverview) -> str:
-    lines = ["DESSERT dashboard summary", "", "Stage Scores"]
+    lines = ["DESSERT dashboard summary", "", "DESSERT Diagnostics"]
     for score in overview.stage_scores:
+        label = score.label or score.stage.value
+        metric_id = f" metric={score.metric_id}" if score.metric_id else ""
         lines.append(
             f"{score.stage.value}: {score.score:.0f} "
-            f"trials={score.trial_count}"
+            f"{label}{metric_id} trials={score.trial_count}"
         )
 
     if overview.biggest_leak is not None:

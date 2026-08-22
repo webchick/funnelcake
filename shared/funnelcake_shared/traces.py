@@ -15,8 +15,14 @@ class DessertStage(StrEnum):
     SELECT = "select"
     SETUP = "setup"
     EXECUTE = "execute"
-    REPEAT = "repeat"
+    RETAIN = "retain"
     TRUST = "trust"
+
+    @classmethod
+    def _missing_(cls, value: object) -> DessertStage | None:
+        if value == "repeat":
+            return cls.RETAIN
+        return None
 
 
 class EvidenceGrade(StrEnum):
