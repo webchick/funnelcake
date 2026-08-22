@@ -261,6 +261,34 @@ class GeoCliTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("PERPLEXITY_API_KEY is required", result.stderr)
 
+    def test_export_otlp_writes_json_artifact(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "otlp.json"
+            result = self.run_cli(
+                "export-otlp",
+                "fixtures/runs/setup-auth-docs.json",
+                "--out",
+                str(output_path),
+            )
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("exported_trial=FC-0001", result.stdout)
+        self.assertEqual(payload["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["traceId"], "4bf92f3577b34da6a3ce929d0e0e0001")
+
+    def test_send_otlp_rejects_invalid_header_syntax(self) -> None:
+        result = self.run_cli(
+            "send-otlp",
+            "fixtures/runs/setup-auth-docs.json",
+            "--endpoint",
+            "http://collector.example/v1/traces",
+            "--header",
+            "invalid",
+        )
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("header must use", result.stderr)
+
     def test_telemetry_normalize_and_inspect_fixture(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "normalized.json"

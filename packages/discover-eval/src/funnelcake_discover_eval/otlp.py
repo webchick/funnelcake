@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import urllib.error
+import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -58,6 +60,46 @@ def write_otlp_json(run: TrialRun, output_path: str | Path) -> Path:
     return path
 
 
+def send_run_to_otlp(
+    run: TrialRun,
+    endpoint: str,
+    *,
+    api_key: str | None = None,
+    headers: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    payload = json.dumps(trial_run_to_otlp_json(run)).encode("utf-8")
+    request_headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "funnelcake/0.1.0",
+    }
+    if api_key:
+        request_headers["Authorization"] = f"Bearer {api_key}"
+    request_headers.update(headers or {})
+
+    request = urllib.request.Request(
+        endpoint,
+        data=payload,
+        headers=request_headers,
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return {
+                "trial_id": run.trial.id,
+                "trace_id": run.trial.trace_id,
+                "endpoint": endpoint,
+                "status": response.status,
+                "reason": response.reason,
+                "content_type": request_headers["Content-Type"],
+            }
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"OTLP endpoint rejected payload: {exc.code} {exc.reason}: {body}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Could not reach OTLP endpoint at {endpoint}: {exc.reason}") from exc
+
+
 def _span_to_otlp(span: Span, run: TrialRun) -> dict[str, Any]:
     attributes = dict(span.attributes)
     if span.trace_id == run.trial.trace_id and span.parent_span_id is None:
@@ -86,6 +128,7 @@ def _span_to_otlp(span: Span, run: TrialRun) -> dict[str, Any]:
 
 def _event_to_otlp(event: TraceEvent) -> dict[str, Any]:
     attributes = dict(event.attributes)
+    attributes["funnelcake.event.id"] = event.id
     attributes["funnelcake.event.type"] = event.type.value
     if event.body is not None:
         attributes["funnelcake.event.body"] = event.body
@@ -103,10 +146,12 @@ def _trial_attributes(run: TrialRun) -> dict[str, JsonValue]:
     attributes: dict[str, JsonValue] = dict(run.trial.attributes)
     attributes.update(
         {
+            "service.name": "funnelcake",
             "funnelcake.trial.id": run.trial.id,
             "funnelcake.stage": run.trial.stage.value,
             "funnelcake.task": run.trial.task,
             "funnelcake.task.family": run.trial.task_family or "",
+            "funnelcake.actor": run.trial.agent,
             "funnelcake.agent": run.trial.agent,
             "funnelcake.trial.status": run.trial.status.value,
             "funnelcake.outcome.verified": run.trial.outcome_verified,

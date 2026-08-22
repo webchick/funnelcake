@@ -28,7 +28,7 @@ from .diagnosis import (
     write_diagnosis_bundle,
 )
 from .models import DiscoveryEvalPlan, DiscoveryEvalResult
-from .otlp import trial_run_to_otlp_json, write_otlp_json
+from .otlp import send_run_to_otlp, trial_run_to_otlp_json, write_otlp_json
 from .phoenix import PhoenixDependencyError, send_run_to_phoenix, trial_run_to_otlp_protobuf
 from .runner import build_placeholder_trial_run, run_task_spec
 from .suite import SuiteRun, SuiteRunResult, discover_task_specs, format_suite_run, run_task_suite
@@ -62,6 +62,7 @@ __all__ = [
     "load_trial_run_artifact",
     "load_trial_runs_dir",
     "send_run_to_phoenix",
+    "send_run_to_otlp",
     "run_task_spec",
     "run_task_suite",
     "trial_run_to_otlp_json",

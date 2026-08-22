@@ -55,6 +55,7 @@ funnelcake dashboard-demo
 funnelcake capture-run fixtures/runs/setup-auth-docs.json
 funnelcake show-run artifacts/runs/FC-0001
 funnelcake export-otlp artifacts/runs/FC-0001
+funnelcake send-otlp artifacts/runs/FC-0001 --endpoint http://localhost:4318/v1/traces
 python3 -m pip install -e '.[phoenix]'
 funnelcake send-phoenix artifacts/runs/FC-0001
 funnelcake validate-task fixtures/tasks/setup-auth-discovery.json

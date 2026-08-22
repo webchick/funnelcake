@@ -56,6 +56,7 @@ from funnelcake_discover_eval import (
     run_task_spec,
     run_task_suite,
     send_run_to_phoenix,
+    send_run_to_otlp,
     format_suite_run,
     write_diagnosis_bundle,
     write_otlp_json,
@@ -162,6 +163,27 @@ def build_parser() -> argparse.ArgumentParser:
     send_phoenix.add_argument(
         "--api-key",
         help="Phoenix API key for Phoenix Cloud or authenticated deployments.",
+    )
+
+    send_otlp = subparsers.add_parser(
+        "send-otlp",
+        help="Send a captured trial run to a generic OTLP HTTP/JSON trace endpoint.",
+    )
+    send_otlp.add_argument("path", help="Path to a run artifact directory or run.json.")
+    send_otlp.add_argument(
+        "--endpoint",
+        default="http://localhost:4318/v1/traces",
+        help="OTLP HTTP/JSON traces endpoint.",
+    )
+    send_otlp.add_argument(
+        "--api-key",
+        help="Bearer token for authenticated OTLP endpoints.",
+    )
+    send_otlp.add_argument(
+        "--header",
+        action="append",
+        default=[],
+        help="Additional HTTP header as 'Name: Value'. Can be repeated.",
     )
 
     validate_task = subparsers.add_parser(
@@ -944,6 +966,47 @@ def send_phoenix(
     )
 
 
+def send_otlp(
+    path: str,
+    endpoint: str,
+    api_key: str | None,
+    header_values: tuple[str, ...],
+) -> str:
+    run = load_trial_run_artifact(path)
+    try:
+        result = send_run_to_otlp(
+            run,
+            endpoint=endpoint,
+            api_key=api_key,
+            headers=_parse_headers(header_values),
+        )
+    except RuntimeError as exc:
+        return str(exc)
+
+    return "\n".join(
+        [
+            f"sent_trial={result['trial_id']}",
+            f"trace_id={result['trace_id']}",
+            f"endpoint={result['endpoint']}",
+            f"status={result['status']} {result['reason']}",
+            f"content_type={result['content_type']}",
+        ]
+    )
+
+
+def _parse_headers(header_values: tuple[str, ...]) -> dict[str, str]:
+    headers = {}
+    for value in header_values:
+        if ":" not in value:
+            raise ValueError(f"header must use 'Name: Value' syntax: {value}")
+        name, header_value = value.split(":", 1)
+        name = name.strip()
+        if not name:
+            raise ValueError(f"header name is required: {value}")
+        headers[name] = header_value.strip()
+    return headers
+
+
 def validate_task(path: str) -> str:
     return format_task_spec(load_task_spec(path))
 
@@ -1495,6 +1558,8 @@ def main() -> None:
             print(export_otlp(args.path, args.out))
         elif args.command == "send-phoenix":
             print(send_phoenix(args.path, args.endpoint, args.project_name, args.api_key))
+        elif args.command == "send-otlp":
+            print(send_otlp(args.path, args.endpoint, args.api_key, tuple(args.header)))
         elif args.command == "validate-task":
             print(validate_task(args.path))
         elif args.command == "observe-answers":
